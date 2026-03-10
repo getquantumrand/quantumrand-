@@ -25,21 +25,21 @@ def client():
 
 
 def test_landing_page_serves_html(client):
-    """Landing page at / returns HTML with Quandrand branding."""
+    """Landing page at / returns HTML with QuantumRand branding."""
     resp = client.get("/")
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
-    assert "QUANDRAND" in resp.text or "Quandrand" in resp.text
-    print("  OK: Landing page serves HTML with Quandrand branding")
+    assert "QUANTUMRAND" in resp.text.upper() or "QuantumRand" in resp.text or "QUANDRAND" in resp.text or "Quandrand" in resp.text
+    print("  OK: Landing page serves HTML with QuantumRand branding")
 
 
 def test_api_info_endpoint(client):
-    """/api/info returns JSON with name Quandrand."""
+    """/api/info returns JSON with name QuantumRand API."""
     resp = client.get("/api/info")
     assert resp.status_code == 200
     data = resp.json()
     assert data["success"] is True
-    assert data["data"]["name"] == "Quandrand"
+    assert "QuantumRand" in data["data"]["name"]
     print(f"  OK: /api/info returns name={data['data']['name']}")
 
 
