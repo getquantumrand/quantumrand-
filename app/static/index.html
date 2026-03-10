@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUANDRAND — True Quantum Randomness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #1a1a1a;
+      --border: #222222;
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79, 142, 247, 0.15);
+      --accent-hover: #6ba0ff;
+      --radius: 10px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Header ───────────────────────────────── */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent-glow);
+    }
+
+    /* ── Sections ─────────────────────────────── */
+    section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Hero ──────────────────────────────────── */
+    .hero {
+      padding-top: 10rem;
+      padding-bottom: 4rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 4.5vw, 3rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .accent {
+      color: var(--accent);
+    }
+
+    .hero p {
+      max-width: 620px;
+      margin: 0 auto 2.5rem;
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .hero .btn {
+      font-size: 0.95rem;
+      padding: 0.85rem 2rem;
+    }
+
+    /* ── Code Example ─────────────────────────── */
+    .code-section {
+      padding-top: 2rem;
+    }
+
+    .code-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .code-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-tab {
+      padding: 0.75rem 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .code-tab:hover {
+      color: var(--text);
+    }
+
+    .code-tab.active {
+      color: var(--accent);
+    }
+
+    .code-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    .code-panel {
+      display: none;
+      padding: 1.5rem 2rem;
+      font-size: 0.85rem;
+      line-height: 1.9;
+      overflow-x: auto;
+    }
+
+    .code-panel.active {
+      display: block;
+    }
+
+    .code-panel pre {
+      margin: 0;
+      white-space: pre;
+    }
+
+    .code-panel .kw { color: #c678dd; }
+    .code-panel .fn { color: #61afef; }
+    .code-panel .str { color: #98c379; }
+    .code-panel .num { color: #d19a66; }
+    .code-panel .cmt { color: #555; }
+    .code-panel .op { color: #56b6c2; }
+    .code-panel .flag { color: #e06c75; }
+
+    /* ── How It Works ─────────────────────────── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: border-color 0.2s;
+    }
+
+    .step:hover {
+      border-color: var(--accent);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+    }
+
+    .step h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.6rem;
+    }
+
+    .step p {
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Pricing ──────────────────────────────── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .price-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .price-card.popular {
+      border-color: var(--accent);
+      position: relative;
+    }
+
+    .price-card.popular::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.9rem;
+      border-radius: 20px;
+    }
+
+    .price-tier {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .price-amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+
+    .price-amount span {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .price-features {
+      list-style: none;
+      margin: 1.5rem 0;
+      flex: 1;
+    }
+
+    .price-features li {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .price-features li:last-child {
+      border-bottom: none;
+    }
+
+    .price-card .btn {
+      width: 100%;
+      text-align: center;
+      font-size: 0.8rem;
+      margin-top: auto;
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Responsive ───────────────────────────── */
+    @media (max-width: 900px) {
+      .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      header {
+        padding: 1rem 1.25rem;
+      }
+
+      section {
+        padding: 4rem 1.25rem;
+      }
+
+      .hero {
+        padding-top: 8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">QUAND<span>RAND</span></div>
+    <a href="/docs" class="btn btn-outline">Get API Key</a>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>True Quantum Randomness.<br><span class="accent">One Line of Code.</span></h1>
+    <p>Every key, token, and secret your app creates decided by physics &mdash; not math. Powered by a real quantum computer.</p>
+    <a href="/docs" class="btn btn-primary">Get Your Free API Key &rarr;</a>
+  </section>
+
+  <!-- Code Example -->
+  <section class="code-section">
+    <div class="section-label">Integration</div>
+    <div class="section-title">Drop-in SDKs for every stack</div>
+    <div class="code-window">
+      <div class="code-tabs">
+        <button class="code-tab active" data-tab="python">Python</button>
+        <button class="code-tab" data-tab="javascript">JavaScript</button>
+        <button class="code-tab" data-tab="curl">cURL</button>
+      </div>
+      <div class="code-panel active" id="tab-python">
+<pre><span class="kw">import</span> quandrand
+key = quandrand.<span class="fn">generate</span>(<span class="num">256</span>)
+<span class="cmt"># a3f9c2e1b4d87f3c... — decided by quantum physics</span></pre>
+      </div>
+      <div class="code-panel" id="tab-javascript">
+<pre><span class="kw">import</span> quandrand <span class="kw">from</span> <span class="str">'quandrand'</span>
+<span class="kw">const</span> key = <span class="kw">await</span> quandrand.<span class="fn">generate</span>(<span class="num">256</span>)
+<span class="cmt">// a3f9c2e1b4d87f3c... — decided by quantum physics</span></pre>
+      </div>
+      <div class="code-panel" id="tab-curl">
+<pre><span class="fn">curl</span> <span class="flag">-H</span> <span class="str">"X-API-Key: qr_your_key"</span> \
+  https://api.quandrand.dev/generate/key?bits=<span class="num">256</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section>
+    <div class="section-label">How It Works</div>
+    <div class="section-title">From quantum physics to your API response</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Superposition</h3>
+        <p>A qubit enters superposition &mdash; it exists as 0 AND 1 simultaneously, governed by quantum mechanics.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Measurement</h3>
+        <p>Quantum measurement collapses the superposition. Physics alone decides whether it becomes 0 or 1.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Your Key</h3>
+        <p>Repeat 256 times and you have an encryption key whose every bit was decided by the universe.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section>
+    <div class="section-label">Pricing</div>
+    <div class="section-title">Start free. Scale when you're ready.</div>
+    <div class="pricing-grid">
+
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <div class="price-amount">$0<span>/mo</span></div>
+        <ul class="price-features">
+          <li>100 calls / day</li>
+          <li>256 bits max</li>
+          <li>Community support</li>
+        </ul>
+        <a href="/docs" class="btn btn-outline">Get Started</a>
+      </div>
+
+      <div class="price-card popular">
+        <div class="price-tier">Indie</div>
+        <div class="price-amount">$9<span>/mo</span></div>
+        <ul class="price-features">
+          <li>1,000 calls / day</li>
+          <li>1,024 bits max</li>
+          <li>Email support</li>
+        </ul>
+        <a href="/docs" class="btn btn-primary">Get Started</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-tier">Startup</div>
+        <div class="price-amount">$49<span>/mo</span></div>
+        <ul class="price-features">
+          <li>10,000 calls / day</li>
+          <li>2,048 bits max</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="/docs" class="btn btn-outline">Get Started</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-tier">Business</div>
+        <div class="price-amount">$299<span>/mo</span></div>
+        <ul class="price-features">
+          <li>100,000 calls / day</li>
+          <li>4,096 bits max</li>
+          <li>Dedicated support</li>
+        </ul>
+        <a href="/docs" class="btn btn-outline">Get Started</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2026 Quandrand. Built on quantum physics.
+  </footer>
+
+  <!-- Tab Switching -->
+  <script>
+    document.querySelectorAll('.code-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.code-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.code-panel').forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>
