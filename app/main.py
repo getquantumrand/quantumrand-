@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS
-from app.quantum_engine import QuantumEngine
+from app.quantum_engine import QuantumEngine, VALID_BACKENDS
 from app.auth import require_api_key, TIER_LIMITS
 from app.database import (
     create_api_key,
@@ -44,6 +44,15 @@ All /generate/ endpoints require an API key in the header: `X-API-Key: qr_your_k
 | Indie | $9/mo | 1,000 | 1,024 |
 | Startup | $49/mo | 10,000 | 2,048 |
 | Business | $299/mo | 100,000 | 4,096 |
+
+### Backends
+| Backend | Provider | Type | Max Qubits |
+|---------|----------|------|------------|
+| `aer_simulator` | Qiskit | Local simulator | 1024 |
+| `origin_cloud` | Origin Quantum | Cloud simulator | 6 |
+| `origin_wuyuan` | Origin Quantum | Real quantum chip | 6 |
+
+Pass `?backend=origin_wuyuan` to any /generate/ endpoint to use real quantum hardware.
 
 ### How It Works
 Quantum bits are placed in superposition using Hadamard gates. When measured, physics — not math — decides the outcome. This produces randomness that is fundamentally unpredictable.
@@ -454,6 +463,18 @@ def health():
     )
 
 
+@app.get("/backends", summary="List Backends",
+         description="List all available quantum backends and their status. Includes local simulator and Origin Quantum cloud/hardware options.")
+def list_backends():
+    return {
+        "success": True,
+        "data": {
+            "backends": engine._available_backends(),
+            "default": "aer_simulator",
+        },
+    }
+
+
 # --- Key management endpoints ---
 
 @app.post("/keys/create", summary="Create API Key",
@@ -500,28 +521,37 @@ def _log_and_update(api_key: str, endpoint: str, bits: int, elapsed_ms: float):
 
 
 @app.get("/generate/bits", summary="Generate Random Bits",
-         description="Generate raw quantum random bits. Specify count with `n` (1-4096). Returns raw binary string, hex, and byte array.")
+         description="Generate raw quantum random bits. Specify count with `n` (1-4096). Optionally choose a `backend` (aer_simulator, origin_cloud, origin_wuyuan).")
 def generate_bits(
     n: int = Query(default=256, ge=1, le=4096),
+    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
+    if backend not in VALID_BACKENDS:
+        raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
     max_bits = TIER_LIMITS[key_record["tier"]]["max_bits"]
     if n > max_bits:
         raise HTTPException(
             status_code=400,
             detail=f"Your '{key_record['tier']}' tier allows max {max_bits} bits per call.",
         )
-    result = engine.generate_bits(n)
+    try:
+        result = engine.generate_bits(n, backend)
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
     _log_and_update(key_record["key"], "/generate/bits", n, result["elapsed_ms"])
     return {"success": True, "data": result}
 
 
 @app.get("/generate/hex", summary="Generate Random Hex",
-         description="Generate a quantum random hex string. `n` must be a multiple of 4 (4-4096). Returns a hex-encoded random value.")
+         description="Generate a quantum random hex string. `n` must be a multiple of 4 (4-4096). Optionally choose a `backend`.")
 def generate_hex(
     n: int = Query(default=256, ge=4, le=4096),
+    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
+    if backend not in VALID_BACKENDS:
+        raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
     if n % 4 != 0:
         raise HTTPException(status_code=400, detail="n must be a multiple of 4")
     max_bits = TIER_LIMITS[key_record["tier"]]["max_bits"]
@@ -530,7 +560,10 @@ def generate_hex(
             status_code=400,
             detail=f"Your '{key_record['tier']}' tier allows max {max_bits} bits per call.",
         )
-    result = engine.generate_bits(n)
+    try:
+        result = engine.generate_bits(n, backend)
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
     _log_and_update(key_record["key"], "/generate/hex", n, result["elapsed_ms"])
     return {
         "success": True,
@@ -544,25 +577,34 @@ def generate_hex(
 
 
 @app.get("/generate/integer", summary="Generate Random Integer",
-         description="Generate a quantum random integer in a given range. Uses rejection sampling for uniform distribution.")
+         description="Generate a quantum random integer in a given range. Uses rejection sampling for uniform distribution. Optionally choose a `backend`.")
 def generate_integer(
     min: int = Query(default=0),
     max: int = Query(default=100),
+    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
+    if backend not in VALID_BACKENDS:
+        raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
     if min >= max:
         raise HTTPException(status_code=400, detail="min must be less than max")
-    result = engine.generate_integer(min, max)
+    try:
+        result = engine.generate_integer(min, max, backend)
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
     _log_and_update(key_record["key"], "/generate/integer", result["bits_used"], result["elapsed_ms"])
     return {"success": True, "data": result}
 
 
 @app.post("/generate/key", summary="Generate Cryptographic Key",
-          description="Generate a cryptographic key using quantum randomness. Supports 128, 192, 256, or 512 bit keys. Returns hex-encoded key with algorithm hint.")
+          description="Generate a cryptographic key using quantum randomness. Supports 128, 192, 256, or 512 bit keys. Optionally choose a `backend`.")
 def generate_key(
     bits: int = Query(default=256),
+    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
+    if backend not in VALID_BACKENDS:
+        raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
     max_bits = TIER_LIMITS[key_record["tier"]]["max_bits"]
     if bits > max_bits:
         raise HTTPException(
@@ -570,8 +612,8 @@ def generate_key(
             detail=f"Your '{key_record['tier']}' tier allows max {max_bits} bits per call.",
         )
     try:
-        result = engine.generate_key(bits)
-    except ValueError as e:
+        result = engine.generate_key(bits, backend)
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     _log_and_update(key_record["key"], "/generate/key", bits, result["elapsed_ms"])
     return {"success": True, "data": result}
