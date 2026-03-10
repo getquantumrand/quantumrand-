@@ -436,18 +436,18 @@
         <button class="code-tab" data-tab="curl">cURL</button>
       </div>
       <div class="code-panel active" id="tab-python">
-<pre><span class="kw">import</span> quandrand
-key = quandrand.<span class="fn">generate</span>(<span class="num">256</span>)
+<pre><span class="kw">import</span> quantumrand
+key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
 <span class="cmt"># a3f9c2e1b4d87f3c... — decided by quantum physics</span></pre>
       </div>
       <div class="code-panel" id="tab-javascript">
-<pre><span class="kw">import</span> quandrand <span class="kw">from</span> <span class="str">'quandrand'</span>
-<span class="kw">const</span> key = <span class="kw">await</span> quandrand.<span class="fn">generate</span>(<span class="num">256</span>)
+<pre><span class="kw">import</span> quantumrand <span class="kw">from</span> <span class="str">'quantumrand'</span>
+<span class="kw">const</span> key = <span class="kw">await</span> quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
 <span class="cmt">// a3f9c2e1b4d87f3c... — decided by quantum physics</span></pre>
       </div>
       <div class="code-panel" id="tab-curl">
 <pre><span class="fn">curl</span> <span class="flag">-H</span> <span class="str">"X-API-Key: qr_your_key"</span> \
-  https://api.quandrand.dev/generate/key?bits=<span class="num">256</span></pre>
+  https://api.quantumrand.dev/generate/key?bits=<span class="num">256</span></pre>
       </div>
     </div>
   </section>
