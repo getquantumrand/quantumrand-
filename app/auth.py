@@ -1,4 +1,5 @@
-from fastapi import Header, HTTPException
+from fastapi import HTTPException, Security
+from fastapi.security import APIKeyHeader
 from app.database import get_api_key, count_calls_today
 from app.config import MAX_BITS_FREE, MAX_BITS_INDIE, MAX_BITS_STARTUP, MAX_BITS_BUSINESS
 
@@ -10,8 +11,10 @@ TIER_LIMITS = {
     "business": {"calls_per_day": 100_000, "max_bits": MAX_BITS_BUSINESS},
 }
 
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-def require_api_key(x_api_key: str = Header(None)) -> dict:
+
+def require_api_key(x_api_key: str = Security(api_key_header)) -> dict:
     if x_api_key is None:
         raise HTTPException(
             status_code=401,

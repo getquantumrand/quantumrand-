@@ -19,13 +19,13 @@ from app.database import (
     check_connection,
 )
 
-logger = logging.getLogger("quandrand")
+logger = logging.getLogger("quantumrand")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 START_TIME = time.time()
 
 app = FastAPI(
-    title="Quandrand API",
+    title="QuantumRand API",
     description="Quantum Random Number Generator API powered by Qiskit",
     version=API_VERSION,
 )
