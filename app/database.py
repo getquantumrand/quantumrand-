@@ -129,6 +129,16 @@ def count_calls_today(api_key: str, db_path: str | None = None) -> int:
     return row["cnt"]
 
 
+def list_all_keys(db_path: str | None = None) -> list[dict]:
+    """List all API keys (admin use)."""
+    conn = _get_conn(db_path)
+    rows = conn.execute(
+        "SELECT key, name, email, tier, is_active, created_at, last_used_at FROM api_keys ORDER BY created_at DESC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def check_connection() -> bool:
     try:
         conn = _get_conn()

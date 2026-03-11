@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT
+from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET
 from app.quantum_engine import QuantumEngine, VALID_BACKENDS
 from app.auth import require_api_key, TIER_LIMITS
 from app.database import (
@@ -18,6 +18,7 @@ from app.database import (
     update_last_used,
     get_usage_stats,
     check_connection,
+    list_all_keys,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -532,6 +533,18 @@ def keys_stats(key_record: dict = Depends(require_api_key)):
     stats["tier"] = key_record["tier"]
     stats["rate_limit"] = TIER_LIMITS[key_record["tier"]]
     return {"success": True, "data": stats}
+
+
+# --- Admin endpoints ---
+
+@app.get("/admin/keys", summary="List All API Keys (Admin)",
+         description="Admin-only: list all API keys. Requires `secret` query param.",
+         include_in_schema=False)
+def admin_list_keys(secret: str = Query(...)):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    keys = list_all_keys()
+    return {"success": True, "data": {"total": len(keys), "keys": keys}}
 
 
 # --- Authenticated generate endpoints ---
