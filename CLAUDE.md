@@ -38,17 +38,25 @@ quantumrand/
 │   ├── main.py              # FastAPI endpoints, custom Swagger, landing page
 │   ├── quantum_engine.py    # QuantumEngine class (Qiskit + Origin backends)
 │   ├── database.py          # Firebase Firestore (api_keys, usage_log)
-│   ├── auth.py              # API key validation + rate limiting
+│   ├── auth.py              # API key validation, rate limiting, IP allowlist, HMAC signing
+│   ├── cache.py             # Entropy pool (background pre-generation)
 │   ├── config.py            # Environment config (dotenv)
 │   ├── pilotos_client.py    # ZMQ DEALER client for Origin Quantum simulator
 │   └── static/
-│       └── index.html       # Landing page
+│       ├── index.html       # Landing page with live demo
+│       └── dashboard.html   # Admin monitoring dashboard
 ├── simulator/               # Embedded Origin Quantum simulator (ZMQ)
 │   ├── launcher.py          # Start/stop simulator in daemon thread
 │   ├── zmq_router_server.py # ZMQ ROUTER server
 │   ├── task_manager.py      # Task queue management
 │   ├── result_generator.py  # Quantum circuit simulation
 │   └── config.py            # Simulator config (ports, chip types)
+├── sdk/
+│   ├── quantumrand/         # Python SDK (pip install quantumrand)
+│   │   └── client.py        # QuantumRandClient with HMAC signing
+│   └── js/                  # JavaScript SDK (npm install quantumrand)
+│       ├── src/index.js     # QuantumRandClient class
+│       └── src/index.d.ts   # TypeScript definitions
 ├── tests/
 │   ├── test_phase1.py       # Phase 1: engine + API tests
 │   └── test_phase2.py       # Phase 2: auth, rate limits, Firestore tests
@@ -62,6 +70,8 @@ quantumrand/
 - `FIREBASE_CREDENTIALS_JSON` — Firestore service account JSON string (Railway)
 - `FIREBASE_CREDENTIALS` — path to service account JSON file (local)
 - `ADMIN_SECRET` — secret for admin endpoints
+- `DEMO_RATE_LIMIT` — max demo requests per IP per minute (default: 10)
+- `CIRCUIT_TIMEOUT` — quantum circuit execution timeout in seconds (default: 30)
 - `ENV`, `PORT`, `API_VERSION`, `ALLOWED_ORIGINS`
 
 ## Quantum Backends
@@ -91,9 +101,28 @@ quantumrand/
 - Custom dark Swagger UI theme with JetBrains Mono font
 - 422 Validation Errors hidden from OpenAPI docs
 - Admin endpoint uses path param for secret: `/admin/{secret}/keys`
+- API versioning: all endpoints available at both `/` and `/v1/` paths
+- X-Request-ID header on every response (auto-generated or echoed from client)
+- HMAC-SHA256 request signing with 5-minute replay window
+- Per-key IP allowlisting with X-Forwarded-For proxy support
+- Entropy pool pre-generates bits for sub-millisecond aer_simulator responses
+- Circuit execution timeout prevents hanging requests
+- SSRF protection on webhook URLs (blocks private IPs, non-HTTPS)
+- Demo endpoint rate limited per-IP (in-memory tracking)
+
+## Features
+- **Core**: Quantum random bits, hex, integers, cryptographic keys
+- **Auth**: API keys, tiered rate limits, rate limit headers, usage alerts
+- **Security**: HMAC request signing, IP allowlisting, SSRF protection
+- **Key Management**: Create, rotate, revoke, reactivate, tier updates
+- **Monitoring**: Admin dashboard, usage stats, CSV export
+- **Batch & Webhooks**: Multiple values in one call, async delivery
+- **Caching**: Entropy pool for fast aer_simulator responses
+- **SDKs**: Python and JavaScript with TypeScript definitions
+- **API Versioning**: `/v1/` prefix, request IDs on all responses
 
 ## Phase Roadmap
 - **Phase 1** (complete): Core QRNG engine + REST API
 - **Phase 2** (complete): API key auth, rate limiting, usage tracking
-- **Phase 3** (in progress): Landing page, Firebase migration, Origin Quantum backend
-- **Phase 4** (next): Key management (revoke/update), monitoring dashboard, SDK/client libraries
+- **Phase 3** (complete): Landing page, Firebase migration, Origin Quantum backend
+- **Phase 4** (complete): Key management, monitoring dashboard, SDKs, production hardening
