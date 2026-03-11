@@ -1,46 +1,39 @@
 import time
+import random
 import logging
 
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 
-from app.config import ORIGIN_QC_TOKEN, ORIGIN_QC_ENABLED
+from app.config import PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY, PILOTOS_ENABLED
 
 logger = logging.getLogger("quantumrand")
 
 MAX_QUBITS_PER_CIRCUIT = 1024
-ORIGIN_MAX_QUBITS = 6
+ORIGIN_MAX_QUBITS = 20
 ORIGIN_SHOTS = 1000
 
-# Lazy-load pyqpanda to avoid import errors when not installed
-_qcloud_instance = None
-
-
-def _get_qcloud():
-    """Lazy-initialize the Origin Quantum Cloud connection."""
-    global _qcloud_instance
-    if _qcloud_instance is not None:
-        return _qcloud_instance
-    if not ORIGIN_QC_ENABLED:
-        raise RuntimeError(
-            "Origin Quantum Cloud is not configured. Set ORIGIN_QC_TOKEN env var."
-        )
-    try:
-        from pyqpanda import QCloud
-        qcm = QCloud()
-        qcm.init_qvm(ORIGIN_QC_TOKEN, True)
-        _qcloud_instance = qcm
-        logger.info("Origin Quantum Cloud connected")
-        return qcm
-    except ImportError:
-        raise RuntimeError(
-            "pyqpanda is not installed. Run: pip install pyqpanda"
-        )
-    except Exception as e:
-        raise RuntimeError(f"Failed to connect to Origin Quantum Cloud: {e}")
-
-
 VALID_BACKENDS = ["aer_simulator", "origin_cloud", "origin_wuyuan"]
+
+# Lazy-loaded PilotOS client
+_pilotos_client = None
+
+
+def _get_pilotos():
+    """Lazy-initialize the PilotOS client."""
+    global _pilotos_client
+    if _pilotos_client is not None:
+        return _pilotos_client
+    if not PILOTOS_ENABLED:
+        raise RuntimeError(
+            "Origin PilotOS is not configured. "
+            "Set PILOTOS_API_KEY or ORIGIN_PILOTOS_LICENSE env var."
+        )
+    from app.pilotos_client import PilotOSClient
+
+    _pilotos_client = PilotOSClient(PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY)
+    logger.info(f"PilotOS client initialized ({PILOTOS_HOST}:{PILOTOS_PORT})")
+    return _pilotos_client
 
 
 class QuantumEngine:
@@ -59,15 +52,15 @@ class QuantumEngine:
                 "description": "Local Qiskit AerSimulator — fast, unlimited qubits",
             },
         ]
-        origin_status = "available" if ORIGIN_QC_ENABLED else "not_configured"
-        origin_note = "" if ORIGIN_QC_ENABLED else " (set ORIGIN_QC_TOKEN to enable)"
+        origin_status = "available" if PILOTOS_ENABLED else "not_configured"
+        origin_note = "" if PILOTOS_ENABLED else " (set PILOTOS_API_KEY to enable)"
         backends.append({
             "name": "origin_cloud",
             "provider": "Origin Quantum",
             "type": "cloud_simulator",
             "max_qubits": ORIGIN_MAX_QUBITS,
             "status": origin_status,
-            "description": f"Origin Quantum Cloud full-amplitude simulator{origin_note}",
+            "description": f"Origin PilotOS cloud simulator{origin_note}",
         })
         backends.append({
             "name": "origin_wuyuan",
@@ -94,42 +87,24 @@ class QuantumEngine:
         return raw[::-1]
 
     def _run_origin(self, num_qubits: int, use_real_chip: bool = False) -> str:
-        """Run circuit on Origin Quantum Cloud or Wuyuan real chip."""
+        """Run circuit on Origin PilotOS (cloud simulator or Wuyuan real chip)."""
         if num_qubits > ORIGIN_MAX_QUBITS:
             raise ValueError(
                 f"Origin Quantum backends support max {ORIGIN_MAX_QUBITS} qubits, "
                 f"got {num_qubits}. Use aer_simulator for larger requests."
             )
-        from pyqpanda import QProg, hadamard_circuit, Measure
 
-        qcm = _get_qcloud()
-        q = qcm.qAlloc_many(num_qubits)
-        c = qcm.cAlloc_many(num_qubits)
+        client = _get_pilotos()
+        result = client.run_circuit(num_qubits, ORIGIN_SHOTS, use_real_chip)
 
-        prog = QProg()
-        prog << hadamard_circuit(q)
-        for i in range(num_qubits):
-            prog << Measure(q[i], c[i])
-
-        if use_real_chip:
-            from pyqpanda import real_chip_type
-            result = qcm.real_chip_measure(prog, ORIGIN_SHOTS, real_chip_type.origin_wuyuan_d4)
-        else:
-            result = qcm.full_amplitude_measure(prog, ORIGIN_SHOTS)
-
-        # result is dict like {'000': 125, '001': 130, ...} or {'00': 0.25, ...}
-        # Pick the most frequent outcome as our random bits
-        # For true randomness, we sample proportionally
         if not result:
-            raise RuntimeError("Origin Quantum returned empty result")
+            raise RuntimeError("Origin PilotOS returned empty result")
 
-        # Normalize: values might be counts or probabilities
+        # result is dict like {'000': 125, '001': 130, ...}
+        # Sample proportionally from the quantum distribution
         items = list(result.items())
-        total = sum(items[i][1] for i in range(len(items)))
+        total = sum(v for _, v in items)
 
-        # Use the distribution to pick a single random outcome
-        # We use Python's random seeded by the quantum distribution itself
-        import random
         rand_val = random.random() * total
         cumulative = 0
         chosen = items[0][0]
@@ -139,7 +114,6 @@ class QuantumEngine:
                 chosen = bitstring
                 break
 
-        # Pad to expected length if needed
         return chosen.zfill(num_qubits)
 
     def _run_circuit(self, num_qubits: int, backend: str = "aer_simulator") -> str:
@@ -153,14 +127,13 @@ class QuantumEngine:
         else:
             raise ValueError(f"Unknown backend: {backend}. Choose from: {VALID_BACKENDS}")
 
-    # --- Public API (unchanged signatures, added backend param) ---
+    # --- Public API ---
 
     def generate_bits(self, num_bits: int, backend: str = "aer_simulator") -> dict:
         """Generate quantum random bits, chunking if needed."""
         start = time.perf_counter()
 
         if backend in ("origin_cloud", "origin_wuyuan"):
-            # Origin backends: max 6 qubits per circuit, chunk in 6-bit pieces
             max_chunk = ORIGIN_MAX_QUBITS
         else:
             max_chunk = MAX_QUBITS_PER_CIRCUIT

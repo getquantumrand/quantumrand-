@@ -23,6 +23,12 @@ if DATABASE_URL.startswith("sqlite:///"):
 else:
     DB_FILE = "quantumrand.db"
 
-# Origin Quantum Cloud (pyqpanda)
-ORIGIN_QC_TOKEN = os.getenv("ORIGIN_QC_TOKEN", "")
-ORIGIN_QC_ENABLED = bool(ORIGIN_QC_TOKEN)
+# Origin PilotOS (on-premise quantum computing)
+PILOTOS_HOST = os.getenv("PILOTOS_HOST", "localhost")
+PILOTOS_PORT = int(os.getenv("PILOTOS_PORT", "7100"))
+PILOTOS_API_KEY = os.getenv("PILOTOS_API_KEY", os.getenv("ORIGIN_PILOTOS_LICENSE", ""))
+PILOTOS_ENABLED = bool(PILOTOS_API_KEY)
+
+# Legacy alias
+ORIGIN_QC_TOKEN = PILOTOS_API_KEY
+ORIGIN_QC_ENABLED = PILOTOS_ENABLED
