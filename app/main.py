@@ -579,7 +579,7 @@ def _log_and_update(api_key: str, endpoint: str, bits: int, elapsed_ms: float):
          description="Generate raw quantum random bits. Specify count with `n` (1-4096). Optionally choose a `backend` (aer_simulator, origin_cloud, origin_wuyuan).")
 def generate_bits(
     n: int = Query(default=256, ge=1, le=4096),
-    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
+    backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
     if backend not in VALID_BACKENDS:
@@ -602,7 +602,7 @@ def generate_bits(
          description="Generate a quantum random hex string. `n` must be a multiple of 4 (4-4096). Optionally choose a `backend`.")
 def generate_hex(
     n: int = Query(default=256, ge=4, le=4096),
-    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
+    backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
     if backend not in VALID_BACKENDS:
@@ -636,7 +636,7 @@ def generate_hex(
 def generate_integer(
     min: int = Query(default=0),
     max: int = Query(default=100),
-    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
+    backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
     if backend not in VALID_BACKENDS:
@@ -655,7 +655,7 @@ def generate_integer(
           description="Generate a cryptographic key using quantum randomness. Supports 128, 192, 256, or 512 bit keys. Optionally choose a `backend`.")
 def generate_key(
     bits: int = Query(default=256),
-    backend: str = Query(default="aer_simulator", description="Quantum backend to use"),
+    backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
     if backend not in VALID_BACKENDS:
