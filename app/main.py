@@ -22,6 +22,7 @@ from app.database import (
     deactivate_api_key,
     reactivate_api_key,
     update_api_key_tier,
+    get_dashboard_stats,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -587,6 +588,24 @@ def admin_list_keys(secret: str):
         raise HTTPException(status_code=403, detail="Invalid admin secret")
     keys = list_all_keys()
     return {"success": True, "data": {"total": len(keys), "keys": keys}}
+
+
+@app.get("/admin/{secret}/dashboard", include_in_schema=False)
+def admin_dashboard(secret: str):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    dashboard_path = Path(__file__).parent / "static" / "dashboard.html"
+    if not dashboard_path.exists():
+        raise HTTPException(status_code=500, detail="Dashboard template not found")
+    html = dashboard_path.read_text().replace("{{ADMIN_SECRET}}", secret)
+    return HTMLResponse(content=html)
+
+
+@app.get("/admin/{secret}/dashboard/data", include_in_schema=False)
+def admin_dashboard_data(secret: str):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    return {"success": True, "data": get_dashboard_stats()}
 
 
 @app.post("/admin/{secret}/keys/{key}/reactivate", include_in_schema=False)

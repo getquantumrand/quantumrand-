@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuantumRand Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #1a1a1a;
+      --border: #222222;
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79, 142, 247, 0.15);
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --purple: #a855f7;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.15em; color: #fff; }
+    .logo span { color: var(--accent); }
+    .badge { font-size: 0.65rem; background: var(--accent-glow); color: var(--accent); padding: 0.25rem 0.6rem; border-radius: 20px; margin-left: 0.75rem; font-weight: 600; }
+
+    .refresh-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    /* Stat Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--accent); }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Panels */
+    .panels {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.05em;
+    }
+
+    .panel-body { padding: 1.5rem; }
+
+    /* Chart */
+    .chart-container {
+      width: 100%;
+      height: 200px;
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      padding-top: 1rem;
+    }
+
+    .chart-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .chart-bar {
+      width: 100%;
+      background: var(--accent);
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      transition: height 0.5s ease, background 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .chart-bar:hover { background: var(--accent-glow); background-color: #6ba0ff; }
+
+    .chart-bar .tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      color: var(--text);
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .chart-bar:hover .tooltip { display: block; }
+
+    .chart-label {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      transform: rotate(-45deg);
+      white-space: nowrap;
+    }
+
+    /* Top Users Table */
+    .user-table { width: 100%; }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+    .user-row:last-child { border-bottom: none; }
+
+    .user-rank {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+
+    .user-name { flex: 1; color: #fff; font-weight: 500; }
+    .user-calls { color: var(--text-muted); margin-left: 1rem; }
+    .user-bits { color: var(--accent); margin-left: 1rem; font-size: 0.7rem; }
+
+    /* Endpoint breakdown */
+    .endpoint-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+    .endpoint-row:last-child { border-bottom: none; }
+
+    .endpoint-name { color: var(--accent); font-weight: 500; }
+    .endpoint-count { color: var(--text-muted); }
+
+    .endpoint-bar-bg {
+      flex: 1;
+      height: 4px;
+      background: var(--surface-2);
+      border-radius: 2px;
+      margin: 0 1rem;
+      overflow: hidden;
+    }
+
+    .endpoint-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    /* Tier badges */
+    .tier-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .tier-card {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .tier-name {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .tier-count {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin-left: 0.75rem;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Bottom panels */
+    .bottom-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .panels, .bottom-panels { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div style="display:flex;align-items:center;">
+      <div class="logo">QUANTUM<span>RAND</span></div>
+      <span class="badge">ADMIN DASHBOARD</span>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">Refresh</button>
+  </header>
+
+  <div class="container">
+    <div id="content">
+      <div class="loading">Loading dashboard data</div>
+    </div>
+  </div>
+
+  <script>
+    var ADMIN_SECRET = "{{ADMIN_SECRET}}";
+
+    function fmt(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+      return n.toString();
+    }
+
+    function renderDashboard(data) {
+      var keys = data.keys;
+      var usage = data.usage;
+      var topUsers = data.top_users;
+      var maxDaily = Math.max.apply(null, usage.daily.map(function(d) { return d.calls; }).concat([1]));
+
+      var html = '';
+
+      // Stat cards
+      html += '<div class="stats-grid">';
+      html += '<div class="stat-card"><div class="stat-label">Total API Keys</div><div class="stat-value">' + keys.total + '</div><div class="stat-sub">' + keys.active + ' active</div></div>';
+      html += '<div class="stat-card"><div class="stat-label">Calls Today</div><div class="stat-value">' + fmt(usage.calls_today) + '</div><div class="stat-sub">' + fmt(usage.calls_this_month) + ' this month</div></div>';
+      html += '<div class="stat-card"><div class="stat-label">Total Bits Generated</div><div class="stat-value">' + fmt(usage.total_bits) + '</div><div class="stat-sub">' + fmt(usage.total_calls) + ' total calls</div></div>';
+      html += '<div class="stat-card"><div class="stat-label">Avg Latency</div><div class="stat-value">' + usage.avg_latency_ms + '<span style="font-size:0.8rem;color:var(--text-muted)">ms</span></div><div class="stat-sub">per request</div></div>';
+      html += '</div>';
+
+      // Chart + Top Users
+      html += '<div class="panels">';
+
+      // Daily chart
+      html += '<div class="panel"><div class="panel-header">API Calls (Last 30 Days)</div><div class="panel-body"><div class="chart-container">';
+      if (usage.daily.length === 0) {
+        html += '<div style="color:var(--text-muted);font-size:0.8rem;margin:auto;">No usage data yet</div>';
+      } else {
+        for (var i = 0; i < usage.daily.length; i++) {
+          var d = usage.daily[i];
+          var pct = Math.max((d.calls / maxDaily) * 100, 1);
+          var label = d.date.substring(5);
+          html += '<div class="chart-bar-wrap">';
+          html += '<div class="chart-bar" style="height:' + pct + '%"><div class="tooltip">' + d.date + ': ' + d.calls + ' calls</div></div>';
+          if (i % 5 === 0 || i === usage.daily.length - 1) {
+            html += '<div class="chart-label">' + label + '</div>';
+          }
+          html += '</div>';
+        }
+      }
+      html += '</div></div></div>';
+
+      // Top users
+      html += '<div class="panel"><div class="panel-header">Top Users</div><div class="panel-body"><div class="user-table">';
+      if (topUsers.length === 0) {
+        html += '<div style="color:var(--text-muted);font-size:0.8rem;padding:1rem 0;">No users yet</div>';
+      } else {
+        for (var j = 0; j < topUsers.length; j++) {
+          var u = topUsers[j];
+          html += '<div class="user-row">';
+          html += '<div class="user-rank">' + (j + 1) + '</div>';
+          html += '<div class="user-name">' + u.name + '</div>';
+          html += '<div class="user-calls">' + fmt(u.calls) + ' calls</div>';
+          html += '<div class="user-bits">' + fmt(u.bits) + ' bits</div>';
+          html += '</div>';
+        }
+      }
+      html += '</div></div></div>';
+      html += '</div>';
+
+      // Endpoint breakdown + Tier distribution
+      html += '<div class="bottom-panels">';
+
+      // Endpoints
+      html += '<div class="panel"><div class="panel-header">Endpoint Breakdown</div><div class="panel-body">';
+      var endpoints = Object.entries(usage.by_endpoint);
+      var maxEndpoint = endpoints.length > 0 ? endpoints[0][1] : 1;
+      if (endpoints.length === 0) {
+        html += '<div style="color:var(--text-muted);font-size:0.8rem;">No endpoint data yet</div>';
+      } else {
+        for (var e = 0; e < endpoints.length; e++) {
+          var ep = endpoints[e];
+          var epPct = (ep[1] / maxEndpoint) * 100;
+          html += '<div class="endpoint-row">';
+          html += '<div class="endpoint-name">' + ep[0] + '</div>';
+          html += '<div class="endpoint-bar-bg"><div class="endpoint-bar-fill" style="width:' + epPct + '%"></div></div>';
+          html += '<div class="endpoint-count">' + fmt(ep[1]) + '</div>';
+          html += '</div>';
+        }
+      }
+      html += '</div></div>';
+
+      // Tiers
+      html += '<div class="panel"><div class="panel-header">Keys by Tier</div><div class="panel-body"><div class="tier-grid">';
+      var tiers = ['free', 'indie', 'startup', 'business'];
+      for (var t = 0; t < tiers.length; t++) {
+        var tier = tiers[t];
+        var count = keys.by_tier[tier] || 0;
+        html += '<div class="tier-card"><div class="tier-name">' + tier + '</div><div class="tier-count">' + count + '</div></div>';
+      }
+      html += '</div></div></div>';
+      html += '</div>';
+
+      document.getElementById('content').innerHTML = html;
+    }
+
+    function loadData() {
+      document.getElementById('content').innerHTML = '<div class="loading">Loading dashboard data</div>';
+      fetch('/admin/' + ADMIN_SECRET + '/dashboard/data')
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+          if (resp.success) {
+            renderDashboard(resp.data);
+          } else {
+            document.getElementById('content').innerHTML = '<div class="loading" style="color:var(--red)">Error loading data</div>';
+          }
+        })
+        .catch(function(e) {
+          document.getElementById('content').innerHTML = '<div class="loading" style="color:var(--red)">Failed to connect</div>';
+        });
+    }
+
+    loadData();
+  </script>
+
+</body>
+</html>

@@ -151,6 +151,86 @@ def update_api_key_tier(key: str, tier: str) -> bool:
     return True
 
 
+def get_dashboard_stats() -> dict:
+    """Aggregate stats for the admin monitoring dashboard."""
+    from collections import Counter, defaultdict
+
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    month_start = now.strftime("%Y-%m-01")
+
+    # Key stats
+    all_keys = list(_keys_col.stream())
+    total_keys = len(all_keys)
+    active_keys = sum(1 for k in all_keys if k.to_dict().get("is_active"))
+    tier_counts = Counter(k.to_dict().get("tier", "free") for k in all_keys)
+
+    # Usage stats
+    all_usage = list(_usage_col.stream())
+    total_calls = len(all_usage)
+    total_bits = 0
+    calls_today = 0
+    calls_this_month = 0
+    calls_by_key = Counter()
+    bits_by_key = Counter()
+    calls_by_endpoint = Counter()
+    calls_by_day = Counter()
+    avg_latency_sum = 0.0
+
+    for doc in all_usage:
+        d = doc.to_dict()
+        ts = d.get("timestamp", "")
+        bits = d.get("bits_requested", 0)
+        elapsed = d.get("elapsed_ms", 0)
+        api_key = d.get("api_key", "")
+        endpoint = d.get("endpoint", "")
+
+        total_bits += bits
+        avg_latency_sum += elapsed
+        calls_by_key[api_key] += 1
+        bits_by_key[api_key] += bits
+        calls_by_endpoint[endpoint] += 1
+
+        day = ts[:10] if len(ts) >= 10 else ""
+        if day:
+            calls_by_day[day] += 1
+        if ts >= today:
+            calls_today += 1
+        if ts >= month_start:
+            calls_this_month += 1
+
+    avg_latency = round(avg_latency_sum / total_calls, 2) if total_calls else 0
+
+    # Build key name lookup
+    key_names = {}
+    for k in all_keys:
+        kd = k.to_dict()
+        key_names[kd.get("key", "")] = kd.get("name", "Unknown")
+
+    # Top users by calls
+    top_users = [
+        {"name": key_names.get(k, k[:12] + "..."), "calls": c, "bits": bits_by_key[k]}
+        for k, c in calls_by_key.most_common(10)
+    ]
+
+    # Last 30 days of calls
+    recent_days = sorted(calls_by_day.items())[-30:]
+
+    return {
+        "keys": {"total": total_keys, "active": active_keys, "by_tier": dict(tier_counts)},
+        "usage": {
+            "total_calls": total_calls,
+            "total_bits": total_bits,
+            "calls_today": calls_today,
+            "calls_this_month": calls_this_month,
+            "avg_latency_ms": avg_latency,
+            "by_endpoint": dict(calls_by_endpoint.most_common()),
+            "daily": [{"date": d, "calls": c} for d, c in recent_days],
+        },
+        "top_users": top_users,
+    }
+
+
 def check_connection() -> bool:
     try:
         # Quick read to verify Firestore is reachable
