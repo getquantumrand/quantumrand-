@@ -2,24 +2,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-# Use a separate test database
-os.environ["QUANTUMRAND_TEST"] = "1"
-
 import app.database as db
-
-TEST_DB = "test_quantumrand.db"
-
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_test_db():
-    """Initialize a fresh test DB for the module."""
-    if os.path.exists(TEST_DB):
-        os.remove(TEST_DB)
-    db.DB_PATH = TEST_DB
-    db.init_db(TEST_DB)
-    yield
-    if os.path.exists(TEST_DB):
-        os.remove(TEST_DB)
 
 
 @pytest.fixture(scope="module")
@@ -28,33 +11,50 @@ def client():
     return TestClient(app)
 
 
+# Track keys created during tests for cleanup
+_test_keys = []
+
+
 @pytest.fixture(scope="module")
 def free_key():
-    result = db.create_api_key("Test User", "test@example.com", "free", db_path=TEST_DB)
+    result = db.create_api_key("Test User", "test@example.com", "free")
+    _test_keys.append(result["key"])
     return result["key"]
 
 
+@pytest.fixture(scope="module", autouse=True)
+def cleanup_test_data():
+    """Clean up test data from Firestore after all tests."""
+    yield
+    for key in _test_keys:
+        try:
+            db._keys_col.document(key).delete()
+        except Exception:
+            pass
+        # Clean up usage logs for this key
+        try:
+            docs = db._usage_col.where("api_key", "==", key).stream()
+            for doc in docs:
+                doc.reference.delete()
+        except Exception:
+            pass
+
+
 def test_database_creation():
-    """Test 1: Database tables created correctly."""
-    conn = db._get_conn(TEST_DB)
-    tables = conn.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-    ).fetchall()
-    table_names = {r["name"] for r in tables}
-    assert "api_keys" in table_names
-    assert "usage_log" in table_names
-    conn.close()
+    """Test 1: Firestore connection works."""
+    assert db.check_connection() is True
     print("  \u2705 Database tables created correctly")
 
 
 def test_api_key_generation_and_retrieval():
     """Test 2: API key generation and retrieval."""
-    result = db.create_api_key("Alice", "alice@example.com", "indie", db_path=TEST_DB)
+    result = db.create_api_key("Alice", "alice@example.com", "indie")
+    _test_keys.append(result["key"])
     assert result["key"].startswith("qr_")
     assert len(result["key"]) == 51  # "qr_" + 48 hex chars
     assert result["tier"] == "indie"
 
-    retrieved = db.get_api_key(result["key"], db_path=TEST_DB)
+    retrieved = db.get_api_key(result["key"])
     assert retrieved is not None
     assert retrieved["name"] == "Alice"
     assert retrieved["email"] == "alice@example.com"
@@ -91,7 +91,7 @@ def test_usage_logging(client, free_key):
     """Test 6: Usage logging records correctly."""
     # Make a request first
     client.get("/generate/bits?n=16", headers={"X-API-Key": free_key})
-    stats = db.get_usage_stats(free_key, db_path=TEST_DB)
+    stats = db.get_usage_stats(free_key)
     assert stats["total_calls"] >= 1
     assert stats["total_bits"] >= 8
     assert stats["calls_today"] >= 1
@@ -100,20 +100,15 @@ def test_usage_logging(client, free_key):
 
 def test_rate_limit_returns_429(client):
     """Test 7: Rate limit returns 429 when exceeded."""
-    # Create a free key and exhaust its 100 calls/day limit
-    result = db.create_api_key("RateLimitTest", "rl@example.com", "free", db_path=TEST_DB)
+    result = db.create_api_key("RateLimitTest", "rl@example.com", "free")
     rl_key = result["key"]
+    _test_keys.append(rl_key)
 
-    # Manually insert 100 usage records to simulate exhausted limit
-    conn = db._get_conn(TEST_DB)
+    # Insert 100 usage records to simulate exhausted limit
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat()
-    conn.executemany(
-        "INSERT INTO usage_log (api_key, endpoint, bits_requested, elapsed_ms, timestamp) VALUES (?, ?, ?, ?, ?)",
-        [(rl_key, "/generate/bits", 8, 1.0, now) for _ in range(100)],
-    )
-    conn.commit()
-    conn.close()
+    for _ in range(100):
+        db.log_usage(rl_key, "/generate/bits", 8, 1.0)
 
     resp = client.get("/generate/bits?n=8", headers={"X-API-Key": rl_key})
     assert resp.status_code == 429
