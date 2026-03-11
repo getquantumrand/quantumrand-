@@ -124,6 +124,33 @@ def list_all_keys(db_path: str | None = None) -> list[dict]:
     return [doc.to_dict() for doc in docs]
 
 
+def deactivate_api_key(key: str) -> bool:
+    doc = _keys_col.document(key).get()
+    if not doc.exists:
+        return False
+    _keys_col.document(key).update({"is_active": 0})
+    return True
+
+
+def reactivate_api_key(key: str) -> bool:
+    doc = _keys_col.document(key).get()
+    if not doc.exists:
+        return False
+    _keys_col.document(key).update({"is_active": 1})
+    return True
+
+
+def update_api_key_tier(key: str, tier: str) -> bool:
+    valid_tiers = {"free", "indie", "startup", "business"}
+    if tier not in valid_tiers:
+        raise ValueError(f"Tier must be one of {valid_tiers}, got '{tier}'")
+    doc = _keys_col.document(key).get()
+    if not doc.exists:
+        return False
+    _keys_col.document(key).update({"tier": tier})
+    return True
+
+
 def check_connection() -> bool:
     try:
         # Quick read to verify Firestore is reachable

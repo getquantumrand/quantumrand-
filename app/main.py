@@ -19,6 +19,9 @@ from app.database import (
     get_usage_stats,
     check_connection,
     list_all_keys,
+    deactivate_api_key,
+    reactivate_api_key,
+    update_api_key_tier,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -558,6 +561,13 @@ def keys_me(key_record: dict = Depends(require_api_key)):
     }
 
 
+@app.post("/keys/revoke", summary="Revoke API Key",
+          description="Deactivate your API key. It will no longer be accepted for requests. This action can be undone by an admin.")
+def keys_revoke(key_record: dict = Depends(require_api_key)):
+    deactivate_api_key(key_record["key"])
+    return {"success": True, "data": {"message": "API key revoked", "key": key_record["key"]}}
+
+
 @app.get("/keys/stats", summary="Usage Statistics",
          description="View your usage statistics. Returns total calls, total bits generated, calls today, and calls this month.")
 def keys_stats(key_record: dict = Depends(require_api_key)):
@@ -577,6 +587,40 @@ def admin_list_keys(secret: str):
         raise HTTPException(status_code=403, detail="Invalid admin secret")
     keys = list_all_keys()
     return {"success": True, "data": {"total": len(keys), "keys": keys}}
+
+
+@app.post("/admin/{secret}/keys/{key}/reactivate", include_in_schema=False)
+def admin_reactivate_key(secret: str, key: str):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    if not reactivate_api_key(key):
+        raise HTTPException(status_code=404, detail="Key not found")
+    return {"success": True, "data": {"message": "API key reactivated", "key": key}}
+
+
+@app.post("/admin/{secret}/keys/{key}/deactivate", include_in_schema=False)
+def admin_deactivate_key(secret: str, key: str):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    if not deactivate_api_key(key):
+        raise HTTPException(status_code=404, detail="Key not found")
+    return {"success": True, "data": {"message": "API key deactivated", "key": key}}
+
+
+class TierUpdateRequest(BaseModel):
+    tier: str
+
+
+@app.post("/admin/{secret}/keys/{key}/tier", include_in_schema=False)
+def admin_update_tier(secret: str, key: str, body: TierUpdateRequest):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    try:
+        if not update_api_key_tier(key, body.tier):
+            raise HTTPException(status_code=404, detail="Key not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"success": True, "data": {"message": f"Tier updated to {body.tier}", "key": key}}
 
 
 # --- Authenticated generate endpoints ---
