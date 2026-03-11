@@ -1,5 +1,6 @@
 import time
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Query, HTTPException, Depends, Request
@@ -8,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS
+from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT
 from app.quantum_engine import QuantumEngine, VALID_BACKENDS
 from app.auth import require_api_key, TIER_LIMITS
 from app.database import (
@@ -21,6 +22,25 @@ from app.database import (
 
 logger = logging.getLogger("quantumrand")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start embedded quantum simulator on boot if Origin backend is enabled."""
+    if PILOTOS_ENABLED:
+        try:
+            from simulator.launcher import start_simulator, stop_simulator
+            start_simulator(port=PILOTOS_PORT)
+            logger.info("Embedded quantum simulator started")
+        except Exception as e:
+            logger.warning(f"Could not start embedded simulator: {e}")
+    yield
+    if PILOTOS_ENABLED:
+        try:
+            from simulator.launcher import stop_simulator
+            stop_simulator()
+        except Exception:
+            pass
 
 START_TIME = time.time()
 
@@ -311,6 +331,7 @@ app = FastAPI(
     version=API_VERSION,
     docs_url=None,
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 # CORS

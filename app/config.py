@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ENV = os.getenv("ENV", "development")
 PORT = int(os.getenv("PORT", "8000"))
