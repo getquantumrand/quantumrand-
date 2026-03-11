@@ -335,6 +335,27 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+def custom_openapi():
+    """Remove 422 Validation Error from all endpoint docs."""
+    if app.openapi_schema:
+        return app.openapi_schema
+    from fastapi.openapi.utils import get_openapi
+    schema = get_openapi(
+        title=app.title, version=app.version,
+        description=app.description, routes=app.routes,
+    )
+    for path in schema.get("paths", {}).values():
+        for method in path.values():
+            method.get("responses", {}).pop("422", None)
+    # Remove ValidationError schema if unused
+    schema.get("components", {}).get("schemas", {}).pop("ValidationError", None)
+    schema.get("components", {}).get("schemas", {}).pop("HTTPValidationError", None)
+    app.openapi_schema = schema
+    return schema
+
+app.openapi = custom_openapi
+
 # CORS
 origins = ALLOWED_ORIGINS if isinstance(ALLOWED_ORIGINS, list) else ALLOWED_ORIGINS.split(",")
 app.add_middleware(
