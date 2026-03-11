@@ -454,6 +454,17 @@ def landing_page():
     return HTMLResponse(content=f"<h1>{APP_NAME}</h1>")
 
 
+@app.get("/demo/bits", include_in_schema=False)
+def demo_bits():
+    """Unauthenticated demo endpoint for landing page (64 bits only)."""
+    try:
+        result = engine.generate_bits(64, "origin_cloud")
+        return {"success": True, "data": result}
+    except Exception:
+        result = engine.generate_bits(64, "aer_simulator")
+        return {"success": True, "data": result}
+
+
 @app.get("/api/info", summary="API Info",
          description="API version and status info. Returns available endpoints, version, and environment.")
 def api_info():

@@ -378,6 +378,73 @@
       color: var(--text-muted);
     }
 
+    /* ── Live Demo ────────────────────────────── */
+    .demo-container {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .demo-display {
+      padding: 2rem;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .demo-bits {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      word-break: break-all;
+      text-align: center;
+      line-height: 1.8;
+      transition: color 0.3s;
+    }
+
+    .demo-bits.active {
+      color: var(--accent);
+      text-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .demo-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .demo-controls {
+      padding: 1.25rem 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .demo-btn {
+      min-width: 260px;
+    }
+
+    .demo-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    @keyframes bitReveal {
+      0% { opacity: 0; transform: translateY(4px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .bit-char {
+      display: inline-block;
+      animation: bitReveal 0.15s ease forwards;
+      opacity: 0;
+    }
+
     /* ── Responsive ───────────────────────────── */
     @media (max-width: 900px) {
       .pricing-grid {
@@ -528,12 +595,27 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
     </div>
   </section>
 
+  <!-- Live Demo -->
+  <section>
+    <div class="section-label">Live Demo</div>
+    <div class="section-title">Quantum randomness, right now</div>
+    <div class="demo-container">
+      <div class="demo-display">
+        <div class="demo-bits" id="demoBits">Click generate to see quantum randomness</div>
+        <div class="demo-meta" id="demoMeta"></div>
+      </div>
+      <div class="demo-controls">
+        <button class="btn btn-primary demo-btn" id="demoGenerate" onclick="runDemo()">Generate 64 Quantum Bits</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer>
-    &copy; 2026 Quandrand. Built on quantum physics.
+    &copy; 2026 QuantumRand. Built on quantum physics.
   </footer>
 
-  <!-- Tab Switching -->
+  <!-- Tab Switching & Demo -->
   <script>
     document.querySelectorAll('.code-tab').forEach(function(tab) {
       tab.addEventListener('click', function() {
@@ -543,6 +625,44 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
       });
     });
+
+    async function runDemo() {
+      var btn = document.getElementById('demoGenerate');
+      var bitsEl = document.getElementById('demoBits');
+      var metaEl = document.getElementById('demoMeta');
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      bitsEl.className = 'demo-bits';
+      bitsEl.textContent = '';
+      metaEl.textContent = '';
+
+      try {
+        var resp = await fetch('/demo/bits');
+        var data = await resp.json();
+        if (data.success) {
+          var bits = data.data.raw_bits;
+          bitsEl.innerHTML = '';
+          bitsEl.className = 'demo-bits active';
+          for (var i = 0; i < bits.length; i++) {
+            var span = document.createElement('span');
+            span.className = 'bit-char';
+            span.textContent = bits[i];
+            span.style.animationDelay = (i * 20) + 'ms';
+            if (i > 0 && i % 8 === 0) {
+              bitsEl.appendChild(document.createTextNode(' '));
+            }
+            bitsEl.appendChild(span);
+          }
+          metaEl.textContent = data.data.num_bits + ' bits | ' + data.data.elapsed_ms + 'ms | source: ' + data.data.source;
+        } else {
+          bitsEl.textContent = 'Error generating bits';
+        }
+      } catch (e) {
+        bitsEl.textContent = 'Could not connect to API';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Generate 64 Quantum Bits';
+    }
   </script>
 
 </body>
