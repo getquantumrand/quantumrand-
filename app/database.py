@@ -124,6 +124,41 @@ def list_all_keys(db_path: str | None = None) -> list[dict]:
     return [doc.to_dict() for doc in docs]
 
 
+def rotate_api_key(old_key: str) -> dict | None:
+    """Generate a new key, migrate usage history, deactivate old key."""
+    doc = _keys_col.document(old_key).get()
+    if not doc.exists:
+        return None
+    old_data = doc.to_dict()
+
+    # Generate new key
+    new_key = "qr_" + secrets.token_hex(24)
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Create new key doc with same profile
+    new_doc = {
+        "key": new_key,
+        "name": old_data["name"],
+        "email": old_data["email"],
+        "tier": old_data["tier"],
+        "is_active": 1,
+        "created_at": now,
+        "last_used_at": None,
+        "rotated_from": old_key,
+    }
+    _keys_col.document(new_key).set(new_doc)
+
+    # Migrate usage logs to new key
+    old_usage = _usage_col.where("api_key", "==", old_key).stream()
+    for usage_doc in old_usage:
+        _usage_col.document(usage_doc.id).update({"api_key": new_key})
+
+    # Deactivate old key
+    _keys_col.document(old_key).update({"is_active": 0, "rotated_to": new_key, "rotated_at": now})
+
+    return {"key": new_key, "name": old_data["name"], "email": old_data["email"], "tier": old_data["tier"], "created_at": now}
+
+
 def deactivate_api_key(key: str) -> bool:
     doc = _keys_col.document(key).get()
     if not doc.exists:

@@ -22,6 +22,7 @@ from app.database import (
     deactivate_api_key,
     reactivate_api_key,
     update_api_key_tier,
+    rotate_api_key,
     get_dashboard_stats,
 )
 
@@ -588,6 +589,15 @@ def keys_me(key_record: dict = Depends(require_api_key)):
             "rate_limit": TIER_LIMITS[key_record["tier"]],
         },
     }
+
+
+@app.post("/keys/rotate", summary="Rotate API Key",
+          description="Generate a new API key and deactivate the old one. Usage history is transferred to the new key.")
+def keys_rotate(key_record: dict = Depends(require_api_key)):
+    result = rotate_api_key(key_record["key"])
+    if not result:
+        raise HTTPException(status_code=404, detail="Key not found")
+    return {"success": True, "data": result}
 
 
 @app.post("/keys/revoke", summary="Revoke API Key",
