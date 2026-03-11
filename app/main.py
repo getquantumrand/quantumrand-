@@ -436,6 +436,8 @@ async def request_logging(request: Request, call_next):
         response.headers["X-RateLimit-Remaining"] = str(rl["remaining"])
         response.headers["X-RateLimit-Used"] = str(rl["used"])
         response.headers["X-RateLimit-Reset"] = "midnight UTC"
+        if rl.get("warning"):
+            response.headers["X-RateLimit-Warning"] = rl["warning"]
 
     return response
 

@@ -54,11 +54,22 @@ def require_api_key(x_api_key: str = Security(api_key_header)) -> dict:
             },
         )
 
+    remaining = max(0, limits["calls_per_day"] - calls_today - 1)
+    used = calls_today + 1
+    usage_pct = used / limits["calls_per_day"]
+
+    warning = None
+    if usage_pct >= 0.95:
+        warning = f"Critical: {remaining} calls remaining today ({tier} tier). Resets at midnight UTC."
+    elif usage_pct >= 0.80:
+        warning = f"Warning: {remaining} calls remaining today ({tier} tier). Resets at midnight UTC."
+
     # Store rate limit info for middleware to inject as response headers
     _thread_local.ratelimit = {
         "limit": limits["calls_per_day"],
-        "remaining": max(0, limits["calls_per_day"] - calls_today - 1),
-        "used": calls_today + 1,
+        "remaining": remaining,
+        "used": used,
+        "warning": warning,
     }
 
     return key_record
