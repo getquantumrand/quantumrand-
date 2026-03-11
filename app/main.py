@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
             logger.info("Embedded quantum simulator started")
         except Exception as e:
             logger.warning(f"Could not start embedded simulator: {e}")
+    start_pool()
     yield
     if PILOTOS_ENABLED:
         try:
@@ -372,6 +373,10 @@ app.add_middleware(
 
 engine = QuantumEngine()
 
+# Initialize entropy pool
+from app.cache import init_pool, start_pool, pool_stats
+init_pool(engine)
+
 # Mount static files
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():
@@ -447,6 +452,16 @@ class KeyCreateRequest(BaseModel):
     tier: str = "free"
 
 
+class BatchRequest(BaseModel):
+    requests: list[dict]
+
+
+class WebhookRequest(BaseModel):
+    callback_url: str
+    type: str = "bits"
+    params: dict = {}
+
+
 # --- Public endpoints ---
 
 @app.get("/", response_class=HTMLResponse, summary="Landing Page",
@@ -487,9 +502,12 @@ def api_info():
                 "GET  /generate/hex  - Generate random hex string (auth required)",
                 "GET  /generate/integer - Generate random integer (auth required)",
                 "POST /generate/key  - Generate cryptographic key (auth required)",
+                "POST /generate/batch - Batch generate multiple values (auth required)",
+                "POST /generate/webhook - Async generation with webhook delivery (auth required)",
                 "POST /keys/create   - Create new API key (public)",
                 "GET  /keys/me       - Get your key info (auth required)",
                 "GET  /keys/stats    - Get usage stats (auth required)",
+                "POST /keys/revoke   - Revoke your API key (auth required)",
             ],
         },
     }
@@ -516,6 +534,7 @@ def health():
                 "uptime_seconds": uptime_seconds,
                 "database": "connected" if db_ok else "disconnected",
                 "quantum_engine": "healthy" if engine_ok else "unhealthy",
+                "entropy_pool": pool_stats(),
             },
         },
     )
@@ -746,3 +765,138 @@ def generate_key(
         raise HTTPException(status_code=400, detail=str(e))
     _log_and_update(key_record["key"], "/generate/key", bits, result["elapsed_ms"])
     return {"success": True, "data": result}
+
+
+@app.post("/generate/batch", summary="Batch Generate",
+          description="Generate multiple random values in one call. Send a list of requests, each with a `type` (bits/hex/integer/key) and `params`.")
+def generate_batch(
+    body: BatchRequest,
+    backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
+    key_record: dict = Depends(require_api_key),
+):
+    if len(body.requests) > 20:
+        raise HTTPException(status_code=400, detail="Maximum 20 requests per batch")
+    if len(body.requests) == 0:
+        raise HTTPException(status_code=400, detail="At least one request required")
+    if backend not in VALID_BACKENDS:
+        raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
+
+    max_bits = TIER_LIMITS[key_record["tier"]]["max_bits"]
+    results = []
+    total_bits = 0
+    total_elapsed = 0
+
+    for i, req in enumerate(body.requests):
+        req_type = req.get("type", "bits")
+        params = req.get("params", {})
+        try:
+            if req_type == "bits":
+                n = int(params.get("n", 256))
+                if n > max_bits:
+                    raise ValueError(f"Max {max_bits} bits for your tier")
+                r = engine.generate_bits(n, backend)
+                total_bits += n
+                total_elapsed += r["elapsed_ms"]
+                results.append({"index": i, "type": "bits", "data": r})
+            elif req_type == "hex":
+                n = int(params.get("n", 256))
+                if n > max_bits:
+                    raise ValueError(f"Max {max_bits} bits for your tier")
+                r = engine.generate_bits(n, backend)
+                total_bits += n
+                total_elapsed += r["elapsed_ms"]
+                results.append({"index": i, "type": "hex", "data": {"hex": r["hex"], "num_bits": n, "source": backend}})
+            elif req_type == "integer":
+                min_val = int(params.get("min", 0))
+                max_val = int(params.get("max", 100))
+                r = engine.generate_integer(min_val, max_val, backend)
+                total_bits += r["bits_used"]
+                total_elapsed += r["elapsed_ms"]
+                results.append({"index": i, "type": "integer", "data": r})
+            elif req_type == "key":
+                bits = int(params.get("bits", 256))
+                if bits > max_bits:
+                    raise ValueError(f"Max {max_bits} bits for your tier")
+                r = engine.generate_key(bits, backend)
+                total_bits += bits
+                total_elapsed += r["elapsed_ms"]
+                results.append({"index": i, "type": "key", "data": r})
+            else:
+                results.append({"index": i, "type": req_type, "error": f"Unknown type: {req_type}"})
+        except Exception as e:
+            results.append({"index": i, "type": req_type, "error": str(e)})
+
+    _log_and_update(key_record["key"], "/generate/batch", total_bits, total_elapsed)
+    return {
+        "success": True,
+        "data": {
+            "count": len(results),
+            "total_bits": total_bits,
+            "total_elapsed_ms": round(total_elapsed, 2),
+            "results": results,
+        },
+    }
+
+
+@app.post("/generate/webhook", summary="Webhook Generate",
+          description="Generate quantum randomness and deliver results to a callback URL. Returns immediately with a job ID. Results are POSTed to your URL when ready.")
+def generate_webhook(
+    body: WebhookRequest,
+    backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
+    key_record: dict = Depends(require_api_key),
+):
+    if backend not in VALID_BACKENDS:
+        raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
+    if not body.callback_url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="callback_url must use HTTPS")
+
+    import uuid
+    job_id = f"wh_{uuid.uuid4().hex[:16]}"
+
+    import threading
+
+    def _webhook_worker():
+        try:
+            max_bits = TIER_LIMITS[key_record["tier"]]["max_bits"]
+            params = body.params
+            if body.type == "bits":
+                n = int(params.get("n", 256))
+                n = min(n, max_bits)
+                result = engine.generate_bits(n, backend)
+                payload = {"job_id": job_id, "type": "bits", "data": result}
+            elif body.type == "hex":
+                n = int(params.get("n", 256))
+                n = min(n, max_bits)
+                result = engine.generate_bits(n, backend)
+                payload = {"job_id": job_id, "type": "hex", "data": {"hex": result["hex"], "num_bits": n}}
+            elif body.type == "integer":
+                min_val = int(params.get("min", 0))
+                max_val = int(params.get("max", 100))
+                result = engine.generate_integer(min_val, max_val, backend)
+                payload = {"job_id": job_id, "type": "integer", "data": result}
+            elif body.type == "key":
+                bits = int(params.get("bits", 256))
+                bits = min(bits, max_bits)
+                result = engine.generate_key(bits, backend)
+                payload = {"job_id": job_id, "type": "key", "data": result}
+            else:
+                payload = {"job_id": job_id, "error": f"Unknown type: {body.type}"}
+
+            import httpx
+            httpx.post(body.callback_url, json=payload, timeout=10)
+            _log_and_update(key_record["key"], "/generate/webhook", int(params.get("n", params.get("bits", 256))), 0)
+        except Exception as e:
+            logger.error(f"Webhook delivery failed for {job_id}: {e}")
+
+    threading.Thread(target=_webhook_worker, daemon=True).start()
+
+    return {
+        "success": True,
+        "data": {
+            "job_id": job_id,
+            "callback_url": body.callback_url,
+            "type": body.type,
+            "status": "processing",
+            "message": "Results will be POSTed to your callback URL",
+        },
+    }

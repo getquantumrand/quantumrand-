@@ -130,8 +130,28 @@ class QuantumEngine:
     # --- Public API ---
 
     def generate_bits(self, num_bits: int, backend: str = "aer_simulator") -> dict:
-        """Generate quantum random bits, chunking if needed."""
+        """Generate quantum random bits, chunking if needed. Uses entropy pool for aer_simulator."""
         start = time.perf_counter()
+
+        # Try entropy pool for aer_simulator requests
+        if backend == "aer_simulator":
+            from app.cache import get_cached_bits
+            cached = get_cached_bits(num_bits)
+            if cached is not None:
+                elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+                all_bits = cached
+                padded = all_bits.ljust((len(all_bits) + 3) // 4 * 4, "0")
+                hex_str = hex(int(padded, 2))[2:].zfill(len(padded) // 4)
+                byte_vals = [int(all_bits[i:i+8], 2) for i in range(0, len(all_bits) - 7, 8)]
+                return {
+                    "raw_bits": all_bits,
+                    "num_bits": num_bits,
+                    "hex": hex_str,
+                    "bytes": byte_vals,
+                    "elapsed_ms": elapsed_ms,
+                    "source": backend,
+                    "cached": True,
+                }
 
         if backend in ("origin_cloud", "origin_wuyuan"):
             max_chunk = ORIGIN_MAX_QUBITS
