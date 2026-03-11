@@ -1,11 +1,12 @@
 import time
 import random
 import logging
+import concurrent.futures
 
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 
-from app.config import PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY, PILOTOS_ENABLED
+from app.config import PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY, PILOTOS_ENABLED, CIRCUIT_TIMEOUT
 
 logger = logging.getLogger("quantumrand")
 
@@ -117,15 +118,22 @@ class QuantumEngine:
         return chosen.zfill(num_qubits)
 
     def _run_circuit(self, num_qubits: int, backend: str = "aer_simulator") -> str:
-        """Run a quantum circuit on the specified backend."""
+        """Run a quantum circuit on the specified backend with timeout."""
         if backend == "aer_simulator":
-            return self._run_aer(num_qubits)
+            runner = lambda: self._run_aer(num_qubits)
         elif backend == "origin_cloud":
-            return self._run_origin(num_qubits, use_real_chip=False)
+            runner = lambda: self._run_origin(num_qubits, use_real_chip=False)
         elif backend == "origin_wuyuan":
-            return self._run_origin(num_qubits, use_real_chip=True)
+            runner = lambda: self._run_origin(num_qubits, use_real_chip=True)
         else:
             raise ValueError(f"Unknown backend: {backend}. Choose from: {VALID_BACKENDS}")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(runner)
+            try:
+                return future.result(timeout=CIRCUIT_TIMEOUT)
+            except concurrent.futures.TimeoutError:
+                raise RuntimeError(f"Circuit execution timed out after {CIRCUIT_TIMEOUT}s")
 
     # --- Public API ---
 

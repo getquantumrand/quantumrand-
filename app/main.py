@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET
+from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET, DEMO_RATE_LIMIT
 from app.quantum_engine import QuantumEngine, VALID_BACKENDS
 from app.auth import require_api_key, get_ratelimit_info, TIER_LIMITS
 from app.database import (
@@ -29,6 +29,61 @@ from app.database import (
 
 logger = logging.getLogger("quantumrand")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
+# --- Demo rate limiter (in-memory, per IP) ---
+import threading as _threading
+_demo_hits: dict[str, list[float]] = {}
+_demo_lock = _threading.Lock()
+
+
+def _check_demo_rate(ip: str) -> bool:
+    """Return True if IP is within demo rate limit."""
+    now = time.time()
+    window = 60.0  # 1 minute
+    with _demo_lock:
+        hits = _demo_hits.get(ip, [])
+        hits = [t for t in hits if now - t < window]
+        if len(hits) >= DEMO_RATE_LIMIT:
+            _demo_hits[ip] = hits
+            return False
+        hits.append(now)
+        _demo_hits[ip] = hits
+        return True
+
+
+def _validate_webhook_url(url: str):
+    """Block SSRF: reject private/internal IPs and non-HTTPS URLs."""
+    if not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="callback_url must use HTTPS")
+    from urllib.parse import urlparse
+    import ipaddress
+    import socket
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Invalid callback URL")
+    # Block obvious internal hostnames
+    blocked = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"}
+    if hostname in blocked:
+        raise HTTPException(status_code=400, detail="callback_url cannot target localhost")
+    # Resolve and check for private IPs
+    try:
+        resolved = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        for _, _, _, _, addr in resolved:
+            ip = ipaddress.ip_address(addr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise HTTPException(status_code=400, detail="callback_url cannot target private/internal networks")
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Could not resolve callback URL hostname")
+
+
+def _require_admin(secret: str):
+    """Validate admin secret, raise 403/404 if invalid or not configured."""
+    if ADMIN_SECRET is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
 
 
 @asynccontextmanager
@@ -487,8 +542,11 @@ def landing_page():
 
 
 @app.get("/demo/bits", include_in_schema=False)
-def demo_bits():
-    """Unauthenticated demo endpoint for landing page (64 bits only)."""
+def demo_bits(request: Request):
+    """Unauthenticated demo endpoint for landing page (64 bits only, rate limited)."""
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_demo_rate(client_ip):
+        raise HTTPException(status_code=429, detail="Demo rate limit exceeded. Try again in a minute.")
     try:
         result = engine.generate_bits(64, "origin_cloud")
         return {"success": True, "data": result}
@@ -530,7 +588,10 @@ def api_info():
          description="System health check for all components. Returns status of database, quantum engine, uptime, and environment.")
 def health():
     uptime_seconds = round(time.time() - START_TIME, 2)
-    db_ok = check_connection()
+    try:
+        db_ok = check_connection()
+    except Exception:
+        db_ok = False
     engine_result = engine.health_check()
     engine_ok = engine_result.get("status") == "healthy"
     overall = "healthy" if (db_ok and engine_ok) else "unhealthy"
@@ -649,16 +710,14 @@ def keys_export(key_record: dict = Depends(require_api_key)):
          description="Admin-only: list all API keys.",
          include_in_schema=False)
 def admin_list_keys(secret: str):
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    _require_admin(secret)
     keys = list_all_keys()
     return {"success": True, "data": {"total": len(keys), "keys": keys}}
 
 
 @app.get("/admin/{secret}/dashboard", include_in_schema=False)
 def admin_dashboard(secret: str):
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    _require_admin(secret)
     dashboard_path = Path(__file__).parent / "static" / "dashboard.html"
     if not dashboard_path.exists():
         raise HTTPException(status_code=500, detail="Dashboard template not found")
@@ -668,15 +727,13 @@ def admin_dashboard(secret: str):
 
 @app.get("/admin/{secret}/dashboard/data", include_in_schema=False)
 def admin_dashboard_data(secret: str):
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    _require_admin(secret)
     return {"success": True, "data": get_dashboard_stats()}
 
 
 @app.post("/admin/{secret}/keys/{key}/reactivate", include_in_schema=False)
 def admin_reactivate_key(secret: str, key: str):
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    _require_admin(secret)
     if not reactivate_api_key(key):
         raise HTTPException(status_code=404, detail="Key not found")
     return {"success": True, "data": {"message": "API key reactivated", "key": key}}
@@ -684,8 +741,7 @@ def admin_reactivate_key(secret: str, key: str):
 
 @app.post("/admin/{secret}/keys/{key}/deactivate", include_in_schema=False)
 def admin_deactivate_key(secret: str, key: str):
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    _require_admin(secret)
     if not deactivate_api_key(key):
         raise HTTPException(status_code=404, detail="Key not found")
     return {"success": True, "data": {"message": "API key deactivated", "key": key}}
@@ -697,8 +753,7 @@ class TierUpdateRequest(BaseModel):
 
 @app.post("/admin/{secret}/keys/{key}/tier", include_in_schema=False)
 def admin_update_tier(secret: str, key: str, body: TierUpdateRequest):
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    _require_admin(secret)
     try:
         if not update_api_key_tier(key, body.tier):
             raise HTTPException(status_code=404, detail="Key not found")
@@ -893,8 +948,7 @@ def generate_webhook(
 ):
     if backend not in VALID_BACKENDS:
         raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
-    if not body.callback_url.startswith("https://"):
-        raise HTTPException(status_code=400, detail="callback_url must use HTTPS")
+    _validate_webhook_url(body.callback_url)
 
     import uuid
     job_id = f"wh_{uuid.uuid4().hex[:16]}"
