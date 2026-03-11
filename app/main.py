@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Query, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -24,6 +24,7 @@ from app.database import (
     update_api_key_tier,
     rotate_api_key,
     get_dashboard_stats,
+    get_usage_logs,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -616,6 +617,30 @@ def keys_stats(key_record: dict = Depends(require_api_key)):
     stats["tier"] = key_record["tier"]
     stats["rate_limit"] = TIER_LIMITS[key_record["tier"]]
     return {"success": True, "data": stats}
+
+
+@app.get("/keys/export", summary="Export Usage Data",
+         description="Download your usage history as a CSV file. Includes timestamp, endpoint, bits requested, and latency for every call.")
+def keys_export(key_record: dict = Depends(require_api_key)):
+    import io
+    import csv
+    logs = get_usage_logs(key_record["key"])
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["timestamp", "endpoint", "bits_requested", "elapsed_ms"])
+    for log in logs:
+        writer.writerow([
+            log.get("timestamp", ""),
+            log.get("endpoint", ""),
+            log.get("bits_requested", 0),
+            log.get("elapsed_ms", 0),
+        ])
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=quantumrand_usage.csv"},
+    )
 
 
 # --- Admin endpoints ---

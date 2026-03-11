@@ -266,6 +266,14 @@ def get_dashboard_stats() -> dict:
     }
 
 
+def get_usage_logs(api_key: str) -> list[dict]:
+    """Get all usage log entries for an API key, sorted by timestamp."""
+    docs = _usage_col.where("api_key", "==", api_key).stream()
+    logs = [doc.to_dict() for doc in docs]
+    logs.sort(key=lambda d: d.get("timestamp", ""))
+    return logs
+
+
 def check_connection() -> bool:
     try:
         # Quick read to verify Firestore is reachable
