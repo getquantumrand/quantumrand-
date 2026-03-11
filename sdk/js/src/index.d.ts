@@ -7,7 +7,7 @@ export class QuantumRandError extends Error {
 export interface ClientOptions {
   apiKey: string;
   baseUrl?: string;
-  backend?: "aer_simulator" | "origin_cloud" | "origin_wuyuan";
+  backend?: "aer_simulator" | "origin_cloud" | "origin_wuyuan" | "ibm_hardware";
   timeout?: number;
   hmacSecret?: string;
 }

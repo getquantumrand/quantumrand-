@@ -25,6 +25,10 @@ PILOTOS_PORT = int(os.getenv("PILOTOS_PORT", "7100"))
 PILOTOS_API_KEY = os.getenv("PILOTOS_API_KEY", os.getenv("ORIGIN_PILOTOS_LICENSE", ""))
 PILOTOS_ENABLED = bool(PILOTOS_API_KEY)
 
+# IBM Quantum (real quantum hardware)
+IBM_QUANTUM_TOKEN = os.getenv("IBM_QUANTUM_TOKEN", "")
+IBM_QUANTUM_ENABLED = bool(IBM_QUANTUM_TOKEN)
+
 # Admin — None if not configured (disables admin endpoints)
 _admin_secret = os.getenv("ADMIN_SECRET", "")
 ADMIN_SECRET = _admin_secret if _admin_secret else None

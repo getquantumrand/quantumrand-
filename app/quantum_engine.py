@@ -6,7 +6,7 @@ import concurrent.futures
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 
-from app.config import PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY, PILOTOS_ENABLED, CIRCUIT_TIMEOUT
+from app.config import PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY, PILOTOS_ENABLED, CIRCUIT_TIMEOUT, IBM_QUANTUM_TOKEN, IBM_QUANTUM_ENABLED
 
 logger = logging.getLogger("quantumrand")
 
@@ -14,10 +14,16 @@ MAX_QUBITS_PER_CIRCUIT = 1024
 ORIGIN_MAX_QUBITS = 20
 ORIGIN_SHOTS = 1000
 
-VALID_BACKENDS = ["aer_simulator", "origin_cloud", "origin_wuyuan"]
+IBM_MAX_QUBITS = 127  # Conservative limit for IBM Eagle/Heron processors
+
+VALID_BACKENDS = ["aer_simulator", "origin_cloud", "origin_wuyuan", "ibm_hardware"]
 
 # Lazy-loaded PilotOS client
 _pilotos_client = None
+
+# Lazy-loaded IBM Quantum service
+_ibm_service = None
+_ibm_backend = None
 
 
 def _get_pilotos():
@@ -35,6 +41,23 @@ def _get_pilotos():
     _pilotos_client = PilotOSClient(PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY)
     logger.info(f"PilotOS client initialized ({PILOTOS_HOST}:{PILOTOS_PORT})")
     return _pilotos_client
+
+
+def _get_ibm_backend():
+    """Lazy-initialize IBM Quantum service and select least busy backend."""
+    global _ibm_service, _ibm_backend
+    if _ibm_backend is not None:
+        return _ibm_service, _ibm_backend
+    if not IBM_QUANTUM_ENABLED:
+        raise RuntimeError(
+            "IBM Quantum is not configured. Set IBM_QUANTUM_TOKEN env var."
+        )
+    from qiskit_ibm_runtime import QiskitRuntimeService
+
+    _ibm_service = QiskitRuntimeService(token=IBM_QUANTUM_TOKEN)
+    _ibm_backend = _ibm_service.least_busy(operational=True, simulator=False, min_num_qubits=20)
+    logger.info(f"IBM Quantum backend selected: {_ibm_backend.name} ({_ibm_backend.num_qubits} qubits)")
+    return _ibm_service, _ibm_backend
 
 
 class QuantumEngine:
@@ -70,6 +93,16 @@ class QuantumEngine:
             "max_qubits": ORIGIN_MAX_QUBITS,
             "status": origin_status,
             "description": f"Origin Wuyuan superconducting quantum chip — real hardware{origin_note}",
+        })
+        ibm_status = "available" if IBM_QUANTUM_ENABLED else "not_configured"
+        ibm_note = "" if IBM_QUANTUM_ENABLED else " (set IBM_QUANTUM_TOKEN to enable)"
+        backends.append({
+            "name": "ibm_hardware",
+            "provider": "IBM Quantum",
+            "type": "real_quantum_chip",
+            "max_qubits": IBM_MAX_QUBITS,
+            "status": ibm_status,
+            "description": f"IBM superconducting quantum processor — real hardware, queued execution{ibm_note}",
         })
         return backends
 
@@ -117,6 +150,55 @@ class QuantumEngine:
 
         return chosen.zfill(num_qubits)
 
+    def _run_ibm(self, num_qubits: int) -> str:
+        """Run circuit on real IBM Quantum hardware via SamplerV2."""
+        if num_qubits > IBM_MAX_QUBITS:
+            raise ValueError(
+                f"IBM Quantum backend supports max {IBM_MAX_QUBITS} qubits, "
+                f"got {num_qubits}. Use aer_simulator for larger requests."
+            )
+        from qiskit.transpiler import generate_preset_pass_manager
+        from qiskit_ibm_runtime import SamplerV2 as Sampler
+
+        service, backend = _get_ibm_backend()
+
+        qc = QuantumCircuit(num_qubits, num_qubits)
+        for i in range(num_qubits):
+            qc.h(i)
+        qc.measure(range(num_qubits), range(num_qubits))
+
+        # Transpile for target hardware topology
+        pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
+        isa_circuit = pm.run(qc)
+
+        sampler = Sampler(mode=backend)
+        job = sampler.run([isa_circuit])
+        logger.info(f"IBM Quantum job submitted: {job.job_id()}")
+
+        result = job.result()
+        pub_result = result[0]
+        # SamplerV2 returns DataBin with classical register names
+        # For a circuit with measure(range(n), range(n)), the register is 'c' or 'meas'
+        data = pub_result.data
+        # Try common register names
+        if hasattr(data, 'meas'):
+            bitarray = data.meas
+        elif hasattr(data, 'c'):
+            bitarray = data.c
+        else:
+            # Fallback: get first attribute that looks like a BitArray
+            for attr in dir(data):
+                if not attr.startswith('_'):
+                    bitarray = getattr(data, attr)
+                    break
+            else:
+                raise RuntimeError("Could not extract measurement results from IBM Quantum job")
+
+        # BitArray.get_bitstrings() returns list of bitstring strings
+        bitstrings = bitarray.get_bitstrings()
+        bits = bitstrings[0]  # Take first shot
+        return bits[:num_qubits]
+
     def _run_circuit(self, num_qubits: int, backend: str = "aer_simulator") -> str:
         """Run a quantum circuit on the specified backend with timeout."""
         if backend == "aer_simulator":
@@ -125,15 +207,19 @@ class QuantumEngine:
             runner = lambda: self._run_origin(num_qubits, use_real_chip=False)
         elif backend == "origin_wuyuan":
             runner = lambda: self._run_origin(num_qubits, use_real_chip=True)
+        elif backend == "ibm_hardware":
+            runner = lambda: self._run_ibm(num_qubits)
         else:
             raise ValueError(f"Unknown backend: {backend}. Choose from: {VALID_BACKENDS}")
 
+        # IBM hardware jobs include queue wait time — allow much longer timeout
+        timeout = 600 if backend == "ibm_hardware" else CIRCUIT_TIMEOUT
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             future = pool.submit(runner)
             try:
-                return future.result(timeout=CIRCUIT_TIMEOUT)
+                return future.result(timeout=timeout)
             except concurrent.futures.TimeoutError:
-                raise RuntimeError(f"Circuit execution timed out after {CIRCUIT_TIMEOUT}s")
+                raise RuntimeError(f"Circuit execution timed out after {timeout}s")
 
     # --- Public API ---
 
@@ -163,6 +249,8 @@ class QuantumEngine:
 
         if backend in ("origin_cloud", "origin_wuyuan"):
             max_chunk = ORIGIN_MAX_QUBITS
+        elif backend == "ibm_hardware":
+            max_chunk = IBM_MAX_QUBITS
         else:
             max_chunk = MAX_QUBITS_PER_CIRCUIT
 

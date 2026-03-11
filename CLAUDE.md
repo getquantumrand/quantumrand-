@@ -70,6 +70,7 @@ quantumrand/
 - `FIREBASE_CREDENTIALS_JSON` — Firestore service account JSON string (Railway)
 - `FIREBASE_CREDENTIALS` — path to service account JSON file (local)
 - `ADMIN_SECRET` — secret for admin endpoints
+- `IBM_QUANTUM_TOKEN` — IBM Quantum API token for real hardware access
 - `DEMO_RATE_LIMIT` — max demo requests per IP per minute (default: 10)
 - `CIRCUIT_TIMEOUT` — quantum circuit execution timeout in seconds (default: 30)
 - `ENV`, `PORT`, `API_VERSION`, `ALLOWED_ORIGINS`
@@ -80,6 +81,7 @@ quantumrand/
 | `aer_simulator` | Qiskit | Local simulator | 1024 |
 | `origin_cloud` | Origin Quantum | Cloud simulator (default) | 20 |
 | `origin_wuyuan` | Origin Quantum | Real quantum chip | 20 |
+| `ibm_hardware` | IBM Quantum | Real quantum chip | 127 |
 
 ## Rate Limits by Tier
 | Tier     | Calls/Day | Max Bits/Call |
