@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET
 from app.quantum_engine import QuantumEngine, VALID_BACKENDS
-from app.auth import require_api_key, TIER_LIMITS
+from app.auth import require_api_key, get_ratelimit_info, TIER_LIMITS
 from app.database import (
     create_api_key,
     log_usage,
@@ -427,6 +427,15 @@ async def request_logging(request: Request, call_next):
     elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     logger.info(f"{timestamp} | {request.method} | {request.url.path} | {response.status_code} | {elapsed_ms}ms")
+
+    # Inject rate limit headers if available
+    rl = get_ratelimit_info()
+    if rl:
+        response.headers["X-RateLimit-Limit"] = str(rl["limit"])
+        response.headers["X-RateLimit-Remaining"] = str(rl["remaining"])
+        response.headers["X-RateLimit-Used"] = str(rl["used"])
+        response.headers["X-RateLimit-Reset"] = "midnight UTC"
+
     return response
 
 

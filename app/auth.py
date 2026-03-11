@@ -1,3 +1,5 @@
+import threading
+
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
 from app.database import get_api_key, count_calls_today
@@ -13,8 +15,18 @@ TIER_LIMITS = {
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
+# Thread-local storage for passing rate limit info to middleware
+_thread_local = threading.local()
+
+
+def get_ratelimit_info() -> dict | None:
+    """Retrieve rate limit info set by require_api_key for the current request."""
+    return getattr(_thread_local, "ratelimit", None)
+
 
 def require_api_key(x_api_key: str = Security(api_key_header)) -> dict:
+    _thread_local.ratelimit = None
+
     if x_api_key is None:
         raise HTTPException(
             status_code=401,
@@ -35,6 +47,18 @@ def require_api_key(x_api_key: str = Security(api_key_header)) -> dict:
         raise HTTPException(
             status_code=429,
             detail=f"Rate limit exceeded. Your '{tier}' tier allows {limits['calls_per_day']} calls/day. Resets at midnight UTC.",
+            headers={
+                "X-RateLimit-Limit": str(limits["calls_per_day"]),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": "midnight UTC",
+            },
         )
+
+    # Store rate limit info for middleware to inject as response headers
+    _thread_local.ratelimit = {
+        "limit": limits["calls_per_day"],
+        "remaining": max(0, limits["calls_per_day"] - calls_today - 1),
+        "used": calls_today + 1,
+    }
 
     return key_record
