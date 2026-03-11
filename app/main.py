@@ -1,9 +1,10 @@
 import time
+import uuid
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Query, HTTPException, Depends, Request
+from fastapi import FastAPI, APIRouter, Query, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +26,9 @@ from app.database import (
     rotate_api_key,
     get_dashboard_stats,
     get_usage_logs,
+    update_allowed_ips,
+    enable_signing,
+    disable_signing,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -434,6 +438,9 @@ engine = QuantumEngine()
 from app.cache import init_pool, start_pool, pool_stats
 init_pool(engine)
 
+# V1 API router — all versioned endpoints available at both /path and /v1/path
+v1 = APIRouter(prefix="/v1", include_in_schema=False)
+
 # Mount static files
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():
@@ -479,11 +486,18 @@ async def custom_swagger_ui():
 
 @app.middleware("http")
 async def request_logging(request: Request, call_next):
+    # Request ID — echo client's or generate one
+    request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+    request.state.request_id = request_id
+
     start = time.perf_counter()
     response = await call_next(request)
     elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    logger.info(f"{timestamp} | {request.method} | {request.url.path} | {response.status_code} | {elapsed_ms}ms")
+    logger.info(f"{timestamp} | {request.method} | {request.url.path} | {response.status_code} | {elapsed_ms}ms | {request_id}")
+
+    # Always include request ID
+    response.headers["X-Request-ID"] = request_id
 
     # Inject rate limit headers if available
     rl = get_ratelimit_info()
@@ -500,17 +514,27 @@ async def request_logging(request: Request, call_next):
 
 # --- Global exception handler ---
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    request_id = getattr(request.state, "request_id", None) or uuid.uuid4().hex
+    headers = {"X-Request-ID": request_id}
+    if exc.headers:
+        headers.update(exc.headers)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "error": exc.detail, "request_id": request_id},
+        headers=headers,
+    )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    if isinstance(exc, HTTPException):
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"success": False, "error": exc.detail},
-        )
-    logger.error(f"Unhandled exception: {exc}")
+    request_id = getattr(request.state, "request_id", None) or uuid.uuid4().hex
+    logger.error(f"Unhandled exception ({request_id}): {exc}")
     return JSONResponse(
         status_code=500,
-        content={"success": False, "error": "Internal server error"},
+        content={"success": False, "error": "Internal server error", "request_id": request_id},
+        headers={"X-Request-ID": request_id},
     )
 
 
@@ -528,6 +552,10 @@ class WebhookRequest(BaseModel):
     callback_url: str
     type: str = "bits"
     params: dict = {}
+
+
+class AllowedIpsRequest(BaseModel):
+    ips: list[str]
 
 
 # --- Public endpoints ---
@@ -702,6 +730,50 @@ def keys_export(key_record: dict = Depends(require_api_key)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=quantumrand_usage.csv"},
     )
+
+
+@app.get("/keys/allowed-ips", summary="View IP Allowlist",
+         description="View the IP addresses allowed to use your API key. Empty list means no restriction.")
+def keys_get_allowed_ips(key_record: dict = Depends(require_api_key)):
+    return {"success": True, "data": {"allowed_ips": key_record.get("allowed_ips", [])}}
+
+
+@app.post("/keys/allowed-ips", summary="Update IP Allowlist",
+          description="Set the IP addresses allowed to use your API key. Send empty list to remove restriction. Your current IP must be in the list.")
+def keys_set_allowed_ips(request: Request, body: AllowedIpsRequest, key_record: dict = Depends(require_api_key)):
+    from app.auth import _get_client_ip
+    if body.ips:
+        current_ip = _get_client_ip(request)
+        if current_ip not in body.ips:
+            raise HTTPException(status_code=400, detail=f"Your current IP ({current_ip}) must be in the allowlist to avoid locking yourself out.")
+    try:
+        update_allowed_ips(key_record["key"], body.ips)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"success": True, "data": {"allowed_ips": body.ips, "message": "IP allowlist updated"}}
+
+
+@app.post("/keys/signing/enable", summary="Enable Request Signing",
+          description="Enable HMAC-SHA256 request signing for your API key. Returns the signing secret (shown only once). All future requests must include X-Signature and X-Timestamp headers.")
+def keys_enable_signing(key_record: dict = Depends(require_api_key)):
+    secret = enable_signing(key_record["key"])
+    if not secret:
+        raise HTTPException(status_code=404, detail="Key not found")
+    return {
+        "success": True,
+        "data": {
+            "hmac_secret": secret,
+            "message": "Signing enabled. Save this secret — it will not be shown again.",
+            "usage": "X-Signature = HMAC-SHA256(secret, timestamp + method + path + query), X-Timestamp = Unix epoch",
+        },
+    }
+
+
+@app.post("/keys/signing/disable", summary="Disable Request Signing",
+          description="Disable HMAC-SHA256 request signing for your API key.")
+def keys_disable_signing(key_record: dict = Depends(require_api_key)):
+    disable_signing(key_record["key"])
+    return {"success": True, "data": {"message": "Request signing disabled"}}
 
 
 # --- Admin endpoints ---
@@ -1000,3 +1072,25 @@ def generate_webhook(
             "message": "Results will be POSTed to your callback URL",
         },
     }
+
+
+# --- V1 Router: mirror all API endpoints under /v1/ prefix ---
+v1.add_api_route("/api/info", api_info, methods=["GET"])
+v1.add_api_route("/backends", list_backends, methods=["GET"])
+v1.add_api_route("/keys/create", keys_create, methods=["POST"])
+v1.add_api_route("/keys/me", keys_me, methods=["GET"])
+v1.add_api_route("/keys/rotate", keys_rotate, methods=["POST"])
+v1.add_api_route("/keys/revoke", keys_revoke, methods=["POST"])
+v1.add_api_route("/keys/stats", keys_stats, methods=["GET"])
+v1.add_api_route("/keys/export", keys_export, methods=["GET"])
+v1.add_api_route("/keys/allowed-ips", keys_get_allowed_ips, methods=["GET"])
+v1.add_api_route("/keys/allowed-ips", keys_set_allowed_ips, methods=["POST"])
+v1.add_api_route("/keys/signing/enable", keys_enable_signing, methods=["POST"])
+v1.add_api_route("/keys/signing/disable", keys_disable_signing, methods=["POST"])
+v1.add_api_route("/generate/bits", generate_bits, methods=["GET"])
+v1.add_api_route("/generate/hex", generate_hex, methods=["GET"])
+v1.add_api_route("/generate/integer", generate_integer, methods=["GET"])
+v1.add_api_route("/generate/key", generate_key, methods=["POST"])
+v1.add_api_route("/generate/batch", generate_batch, methods=["POST"])
+v1.add_api_route("/generate/webhook", generate_webhook, methods=["POST"])
+app.include_router(v1)

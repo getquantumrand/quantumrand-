@@ -1,0 +1,17 @@
+{
+  "name": "quantumrand",
+  "version": "1.0.0",
+  "description": "QuantumRand SDK — True quantum randomness as a service",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": ["src"],
+  "keywords": ["quantum", "random", "qrng", "cryptography", "api"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/getquantumrand/quantumrand-"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

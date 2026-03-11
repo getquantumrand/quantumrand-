@@ -2,7 +2,7 @@
 Database layer using Firebase Firestore.
 
 Collections:
-  - api_keys: {key, name, email, tier, is_active, created_at, last_used_at}
+  - api_keys: {key, name, email, tier, is_active, created_at, last_used_at, allowed_ips, hmac_secret}
   - usage_log: {api_key, endpoint, bits_requested, elapsed_ms, timestamp}
 """
 
@@ -57,6 +57,8 @@ def create_api_key(name: str, email: str, tier: str = "free", db_path: str | Non
         "is_active": 1,
         "created_at": now,
         "last_used_at": None,
+        "allowed_ips": [],
+        "hmac_secret": None,
     }
     _keys_col.document(key).set(doc)
     return {"key": key, "name": name, "email": email, "tier": tier, "created_at": now}
@@ -264,6 +266,40 @@ def get_dashboard_stats() -> dict:
         },
         "top_users": top_users,
     }
+
+
+def update_allowed_ips(key: str, ips: list[str]) -> bool:
+    """Update the IP allowlist for an API key. Empty list = no restriction."""
+    import ipaddress
+    for ip in ips:
+        try:
+            ipaddress.ip_address(ip)
+        except ValueError:
+            raise ValueError(f"Invalid IP address: {ip}")
+    doc = _keys_col.document(key).get()
+    if not doc.exists:
+        return False
+    _keys_col.document(key).update({"allowed_ips": ips})
+    return True
+
+
+def enable_signing(key: str) -> str | None:
+    """Enable HMAC signing for an API key. Returns the generated secret."""
+    doc = _keys_col.document(key).get()
+    if not doc.exists:
+        return None
+    hmac_secret = secrets.token_hex(32)
+    _keys_col.document(key).update({"hmac_secret": hmac_secret})
+    return hmac_secret
+
+
+def disable_signing(key: str) -> bool:
+    """Disable HMAC signing for an API key."""
+    doc = _keys_col.document(key).get()
+    if not doc.exists:
+        return False
+    _keys_col.document(key).update({"hmac_secret": None})
+    return True
 
 
 def get_usage_logs(api_key: str) -> list[dict]:

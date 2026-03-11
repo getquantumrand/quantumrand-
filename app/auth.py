@@ -1,10 +1,14 @@
+import hashlib
+import hmac as hmac_mod
 import threading
+import time
 
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 from app.database import get_api_key, count_calls_today
 from app.config import MAX_BITS_FREE, MAX_BITS_INDIE, MAX_BITS_STARTUP, MAX_BITS_BUSINESS
 
+HMAC_TOLERANCE = 300  # 5 minutes
 
 TIER_LIMITS = {
     "free":     {"calls_per_day": 100,     "max_bits": MAX_BITS_FREE},
@@ -24,7 +28,47 @@ def get_ratelimit_info() -> dict | None:
     return getattr(_thread_local, "ratelimit", None)
 
 
-def require_api_key(x_api_key: str = Security(api_key_header)) -> dict:
+def _get_client_ip(request: Request) -> str:
+    """Get real client IP, respecting X-Forwarded-For behind proxies."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _verify_hmac(request: Request, hmac_secret: str):
+    """Verify HMAC-SHA256 signature on the request."""
+    signature = request.headers.get("x-signature")
+    timestamp = request.headers.get("x-timestamp")
+
+    if not signature or not timestamp:
+        raise HTTPException(
+            status_code=401,
+            detail="Request signing is enabled for this key. Include X-Signature and X-Timestamp headers.",
+        )
+
+    # Check timestamp freshness (replay protection)
+    try:
+        ts = int(timestamp)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="X-Timestamp must be a Unix epoch integer")
+
+    now = int(time.time())
+    if abs(now - ts) > HMAC_TOLERANCE:
+        raise HTTPException(status_code=401, detail="Request timestamp expired. Must be within 5 minutes of server time.")
+
+    # Compute expected signature: HMAC-SHA256(secret, timestamp + method + path + query)
+    method = request.method.upper()
+    path = request.url.path
+    query = str(request.url.query) if request.url.query else ""
+    payload = f"{timestamp}{method}{path}{query}"
+    expected = hmac_mod.new(hmac_secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+
+    if not hmac_mod.compare_digest(signature, expected):
+        raise HTTPException(status_code=401, detail="Invalid request signature")
+
+
+def require_api_key(request: Request, x_api_key: str = Security(api_key_header)) -> dict:
     _thread_local.ratelimit = None
 
     if x_api_key is None:
@@ -39,6 +83,21 @@ def require_api_key(x_api_key: str = Security(api_key_header)) -> dict:
             status_code=403,
             detail="Invalid or inactive API key.",
         )
+
+    # IP allowlist check
+    allowed_ips = key_record.get("allowed_ips", [])
+    if allowed_ips:
+        client_ip = _get_client_ip(request)
+        if client_ip not in allowed_ips:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Request IP {client_ip} not in allowlist for this key.",
+            )
+
+    # HMAC signature check
+    hmac_secret = key_record.get("hmac_secret")
+    if hmac_secret:
+        _verify_hmac(request, hmac_secret)
 
     tier = key_record["tier"]
     limits = TIER_LIMITS[tier]

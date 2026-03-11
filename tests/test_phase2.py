@@ -65,7 +65,7 @@ def test_unauthenticated_returns_401(client):
     """Test 3: Request without API key returns 401."""
     resp = client.get("/generate/bits?n=8")
     assert resp.status_code == 401
-    assert "Missing API key" in resp.json()["detail"]
+    assert "Missing API key" in resp.json()["error"]
     print("  \u2705 Unauthenticated request returns 401")
 
 
@@ -73,7 +73,7 @@ def test_invalid_key_returns_403(client):
     """Test 4: Request with invalid API key returns 403."""
     resp = client.get("/generate/bits?n=8", headers={"X-API-Key": "qr_boguskey123"})
     assert resp.status_code == 403
-    assert "Invalid" in resp.json()["detail"]
+    assert "Invalid" in resp.json()["error"]
     print("  \u2705 Invalid key returns 403")
 
 
@@ -112,7 +112,7 @@ def test_rate_limit_returns_429(client):
 
     resp = client.get("/generate/bits?n=8", headers={"X-API-Key": rl_key})
     assert resp.status_code == 429
-    assert "Rate limit exceeded" in resp.json()["detail"]
+    assert "Rate limit exceeded" in resp.json()["error"]
     print("  \u2705 Rate limit returns 429 when exceeded")
 
 

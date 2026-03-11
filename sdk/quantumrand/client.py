@@ -1,14 +1,20 @@
 """QuantumRand API client."""
 
+import hashlib
+import hmac as hmac_mod
+import time
+import uuid
+
 import httpx
 
 
 class QuantumRandError(Exception):
     """Raised when the QuantumRand API returns an error."""
 
-    def __init__(self, message: str, status_code: int = 0):
+    def __init__(self, message: str, status_code: int = 0, request_id: str = ""):
         super().__init__(message)
         self.status_code = status_code
+        self.request_id = request_id
 
 
 class QuantumRandClient:
@@ -33,6 +39,9 @@ class QuantumRandClient:
             {"type": "integer", "params": {"min": 1, "max": 6}},
             {"type": "integer", "params": {"min": 1, "max": 6}},
         ])
+
+        # With HMAC request signing
+        qr = QuantumRandClient("qr_key", hmac_secret="your_secret")
     """
 
     DEFAULT_BASE_URL = "https://quantumrand.up.railway.app"
@@ -43,24 +52,48 @@ class QuantumRandClient:
         base_url: str | None = None,
         backend: str = "origin_cloud",
         timeout: float = 30.0,
+        hmac_secret: str | None = None,
     ):
         self.api_key = api_key
         self.base_url = (base_url or self.DEFAULT_BASE_URL).rstrip("/")
         self.backend = backend
+        self.hmac_secret = hmac_secret
         self._client = httpx.Client(
             base_url=self.base_url,
             headers={"X-API-Key": self.api_key},
             timeout=timeout,
         )
 
+    def _sign_request(self, method: str, path: str, query: str = "") -> dict:
+        """Generate HMAC-SHA256 signature headers."""
+        if not self.hmac_secret:
+            return {}
+        ts = str(int(time.time()))
+        payload = f"{ts}{method.upper()}{path}{query}"
+        sig = hmac_mod.new(self.hmac_secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        return {"X-Signature": sig, "X-Timestamp": ts}
+
     def _request(self, method: str, path: str, **kwargs) -> dict:
-        resp = self._client.request(method, path, **kwargs)
+        # Prepend /v1 to all API paths
+        v1_path = f"/v1{path}"
+
+        # Build query string for signing
+        params = kwargs.get("params", {})
+        query = "&".join(f"{k}={v}" for k, v in sorted(params.items())) if params else ""
+
+        # Add signing + request ID headers
+        headers = {"X-Request-ID": uuid.uuid4().hex}
+        headers.update(self._sign_request(method, v1_path, query))
+        kwargs.setdefault("headers", {}).update(headers)
+
+        resp = self._client.request(method, v1_path, **kwargs)
+        request_id = resp.headers.get("x-request-id", "")
         data = resp.json()
         if resp.status_code >= 400:
             detail = data.get("detail") or data.get("error") or resp.text
-            raise QuantumRandError(str(detail), resp.status_code)
+            raise QuantumRandError(str(detail), resp.status_code, request_id)
         if not data.get("success"):
-            raise QuantumRandError(data.get("error", "Unknown error"))
+            raise QuantumRandError(data.get("error", "Unknown error"), request_id=request_id)
         return data["data"]
 
     def bits(self, n: int = 256) -> str:
@@ -98,10 +131,7 @@ class QuantumRandClient:
         return data["results"]
 
     def webhook(self, callback_url: str, type: str = "bits", params: dict | None = None) -> dict:
-        """
-        Trigger async generation with results delivered to a callback URL.
-        Returns job info immediately.
-        """
+        """Trigger async generation with results delivered to a callback URL."""
         data = self._request(
             "POST", "/generate/webhook",
             params={"backend": self.backend},
