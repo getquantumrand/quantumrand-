@@ -537,10 +537,10 @@ def keys_stats(key_record: dict = Depends(require_api_key)):
 
 # --- Admin endpoints ---
 
-@app.get("/admin/keys", summary="List All API Keys (Admin)",
-         description="Admin-only: list all API keys. Requires `secret` query param.",
+@app.get("/admin/{secret}/keys", summary="List All API Keys (Admin)",
+         description="Admin-only: list all API keys.",
          include_in_schema=False)
-def admin_list_keys(secret: str = Query(...)):
+def admin_list_keys(secret: str):
     if secret != ADMIN_SECRET:
         raise HTTPException(status_code=403, detail="Invalid admin secret")
     keys = list_all_keys()
