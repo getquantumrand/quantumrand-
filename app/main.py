@@ -136,10 +136,12 @@ All /generate/ endpoints require an API key in the header: `X-API-Key: qr_your_k
 | Backend | Provider | Type | Max Qubits |
 |---------|----------|------|------------|
 | `aer_simulator` | Qiskit | Local simulator | 1024 |
-| `origin_cloud` | Origin Quantum | Cloud simulator | 6 |
-| `origin_wuyuan` | Origin Quantum | Real quantum chip | 6 |
+| `origin_cloud` | Origin Quantum | Cloud simulator | 20 |
+| `origin_wuyuan` | Origin Quantum | Real quantum chip | 20 |
+| `ibm_hardware` | IBM Quantum | Real quantum chip | 127 |
 
-Pass `?backend=origin_wuyuan` to any /generate/ endpoint to use real quantum hardware.
+Pass `?backend=ibm_hardware` to any /generate/ endpoint to use real IBM quantum hardware (queued, 2-30 min).
+Pass `?backend=aer_simulator` for instant results from a local quantum simulator.
 
 ### How It Works
 Quantum bits are placed in superposition using Hadamard gates. When measured, physics — not math — decides the outcome. This produces randomness that is fundamentally unpredictable.
@@ -858,8 +860,11 @@ def generate_bits(
         )
     try:
         result = engine.generate_bits(n, backend)
-    except (ValueError, RuntimeError) as e:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        logger.error(f"generate_bits failed: {e}")
+        raise HTTPException(status_code=502, detail="Quantum backend unavailable. Try aer_simulator or retry later.")
     _log_and_update(key_record["key"], "/generate/bits", n, result["elapsed_ms"])
     return {"success": True, "data": result}
 
@@ -883,8 +888,11 @@ def generate_hex(
         )
     try:
         result = engine.generate_bits(n, backend)
-    except (ValueError, RuntimeError) as e:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        logger.error(f"generate_hex failed: {e}")
+        raise HTTPException(status_code=502, detail="Quantum backend unavailable. Try aer_simulator or retry later.")
     _log_and_update(key_record["key"], "/generate/hex", n, result["elapsed_ms"])
     return {
         "success": True,
@@ -900,8 +908,8 @@ def generate_hex(
 @app.get("/generate/integer", summary="Generate Random Integer",
          description="Generate a quantum random integer in a given range. Uses rejection sampling for uniform distribution. Optionally choose a `backend`.")
 def generate_integer(
-    min: int = Query(default=0),
-    max: int = Query(default=100),
+    min: int = Query(default=0, ge=-(2**31), le=2**31 - 1),
+    max: int = Query(default=100, ge=-(2**31), le=2**31 - 1),
     backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
@@ -909,10 +917,12 @@ def generate_integer(
         raise HTTPException(status_code=400, detail=f"Invalid backend. Choose from: {VALID_BACKENDS}")
     if min >= max:
         raise HTTPException(status_code=400, detail="min must be less than max")
+    if max - min > 2**20:
+        raise HTTPException(status_code=400, detail="Range too large. Maximum range is 2^20 (1,048,576).")
     try:
         result = engine.generate_integer(min, max, backend)
-    except (ValueError, RuntimeError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except (ValueError, RuntimeError):
+        raise HTTPException(status_code=400, detail="Failed to generate integer. Try a smaller range.")
     _log_and_update(key_record["key"], "/generate/integer", result["bits_used"], result["elapsed_ms"])
     return {"success": True, "data": result}
 
@@ -920,7 +930,7 @@ def generate_integer(
 @app.post("/generate/key", summary="Generate Cryptographic Key",
           description="Generate a cryptographic key using quantum randomness. Supports 128, 192, 256, or 512 bit keys. Optionally choose a `backend`.")
 def generate_key(
-    bits: int = Query(default=256),
+    bits: int = Query(default=256, description="Key size: 128, 192, 256, or 512"),
     backend: str = Query(default="origin_cloud", description="Quantum backend to use"),
     key_record: dict = Depends(require_api_key),
 ):
@@ -934,8 +944,11 @@ def generate_key(
         )
     try:
         result = engine.generate_key(bits, backend)
-    except (ValueError, RuntimeError) as e:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        logger.error(f"generate_key failed: {e}")
+        raise HTTPException(status_code=502, detail="Quantum backend unavailable. Try aer_simulator or retry later.")
     _log_and_update(key_record["key"], "/generate/key", bits, result["elapsed_ms"])
     return {"success": True, "data": result}
 
@@ -996,8 +1009,12 @@ def generate_batch(
                 results.append({"index": i, "type": "key", "data": r})
             else:
                 results.append({"index": i, "type": req_type, "error": f"Unknown type: {req_type}"})
-        except Exception as e:
+        except ValueError as e:
             results.append({"index": i, "type": req_type, "error": str(e)})
+        except RuntimeError:
+            results.append({"index": i, "type": req_type, "error": "Quantum backend unavailable"})
+        except Exception:
+            results.append({"index": i, "type": req_type, "error": "Unexpected error processing request"})
 
     _log_and_update(key_record["key"], "/generate/batch", total_bits, total_elapsed)
     return {

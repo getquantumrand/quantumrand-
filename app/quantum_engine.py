@@ -32,10 +32,7 @@ def _get_pilotos():
     if _pilotos_client is not None:
         return _pilotos_client
     if not PILOTOS_ENABLED:
-        raise RuntimeError(
-            "Origin PilotOS is not configured. "
-            "Set PILOTOS_API_KEY or ORIGIN_PILOTOS_LICENSE env var."
-        )
+        raise RuntimeError("Origin Quantum backend is not available.")
     from app.pilotos_client import PilotOSClient
 
     _pilotos_client = PilotOSClient(PILOTOS_HOST, PILOTOS_PORT, PILOTOS_API_KEY)
@@ -49,9 +46,7 @@ def _get_ibm_backend():
     if _ibm_backend is not None:
         return _ibm_service, _ibm_backend
     if not IBM_QUANTUM_ENABLED:
-        raise RuntimeError(
-            "IBM Quantum is not configured. Set IBM_QUANTUM_TOKEN env var."
-        )
+        raise RuntimeError("IBM Quantum backend is not available.")
     from qiskit_ibm_runtime import QiskitRuntimeService
 
     _ibm_service = QiskitRuntimeService(token=IBM_QUANTUM_TOKEN)
@@ -329,8 +324,8 @@ class QuantumEngine:
                 "elapsed_ms": result["elapsed_ms"],
             }
         except Exception as e:
+            logger.error(f"Health check failed: {e}")
             return {
                 "status": "unhealthy",
                 "backend": "aer_simulator",
-                "error": str(e),
             }
