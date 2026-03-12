@@ -29,6 +29,9 @@ PILOTOS_ENABLED = bool(PILOTOS_API_KEY)
 IBM_QUANTUM_TOKEN = os.getenv("IBM_QUANTUM_TOKEN", "")
 IBM_QUANTUM_ENABLED = bool(IBM_QUANTUM_TOKEN)
 
+# Sentry error tracking
+SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+
 # Admin — None if not configured (disables admin endpoints)
 _admin_secret = os.getenv("ADMIN_SECRET", "")
 ADMIN_SECRET = _admin_secret if _admin_secret else None

@@ -71,6 +71,7 @@ quantumrand/
 - `FIREBASE_CREDENTIALS` — path to service account JSON file (local)
 - `ADMIN_SECRET` — secret for admin endpoints
 - `IBM_QUANTUM_TOKEN` — IBM Quantum API token for real hardware access
+- `SENTRY_DSN` — Sentry error tracking DSN (optional)
 - `DEMO_RATE_LIMIT` — max demo requests per IP per minute (default: 10)
 - `CIRCUIT_TIMEOUT` — quantum circuit execution timeout in seconds (default: 30)
 - `ENV`, `PORT`, `API_VERSION`, `ALLOWED_ORIGINS`
@@ -96,7 +97,10 @@ quantumrand/
 - Qiskit bit ordering is reversed after measurement
 - Rejection sampling for uniform integer generation
 - Single QuantumEngine instance shared across requests
-- API keys prefixed with "qr_" for easy identification
+- API keys prefixed with "qr_" for easy identification; stored as SHA-256 hashes in Firestore
+- Sentry error tracking (optional, set SENTRY_DSN env var)
+- IBM Quantum auto-fallback to aer_simulator on failure
+- GitHub Actions CI: tests, syntax check, dependency audit
 - Embedded ZMQ simulator runs as daemon thread via FastAPI lifespan
 - Firestore queries avoid composite indexes (filter in Python instead)
 - Firebase credentials: JSON env var for Railway, file path for local dev

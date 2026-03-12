@@ -2,10 +2,13 @@
 Database layer using Firebase Firestore.
 
 Collections:
-  - api_keys: {key, name, email, tier, is_active, created_at, last_used_at, allowed_ips, hmac_secret}
+  - api_keys: document ID = SHA-256 hash of key. Plaintext key is never stored.
+    Fields: {key_hash, key_prefix, name, email, tier, is_active, created_at, last_used_at, allowed_ips, hmac_secret}
   - usage_log: {api_key, endpoint, bits_requested, elapsed_ms, timestamp}
+    api_key field stores the key hash, not the plaintext.
 """
 
+import hashlib
 import os
 import secrets
 from datetime import datetime, timezone
@@ -43,14 +46,21 @@ def init_db(db_path: str | None = None):
     pass
 
 
+def _hash_key(raw_key: str) -> str:
+    """SHA-256 hash of a raw API key."""
+    return hashlib.sha256(raw_key.encode()).hexdigest()
+
+
 def create_api_key(name: str, email: str, tier: str = "free", db_path: str | None = None) -> dict:
     valid_tiers = {"free", "indie", "startup", "business"}
     if tier not in valid_tiers:
         raise ValueError(f"Tier must be one of {valid_tiers}, got '{tier}'")
-    key = "qr_" + secrets.token_hex(24)
+    raw_key = "qr_" + secrets.token_hex(24)
+    key_hash = _hash_key(raw_key)
     now = datetime.now(timezone.utc).isoformat()
     doc = {
-        "key": key,
+        "key_hash": key_hash,
+        "key_prefix": raw_key[:10] + "...",
         "name": name,
         "email": email,
         "tier": tier,
@@ -60,15 +70,26 @@ def create_api_key(name: str, email: str, tier: str = "free", db_path: str | Non
         "allowed_ips": [],
         "hmac_secret": None,
     }
-    _keys_col.document(key).set(doc)
-    return {"key": key, "name": name, "email": email, "tier": tier, "created_at": now}
+    _keys_col.document(key_hash).set(doc)
+    return {"key": raw_key, "name": name, "email": email, "tier": tier, "created_at": now}
 
 
-def get_api_key(key: str, db_path: str | None = None) -> dict | None:
-    doc = _keys_col.document(key).get()
-    if not doc.exists:
-        return None
-    return doc.to_dict()
+def get_api_key(raw_key: str, db_path: str | None = None) -> dict | None:
+    """Look up an API key. Tries hashed lookup first (new keys), then legacy plaintext ID."""
+    key_hash = _hash_key(raw_key)
+    # New hashed key lookup
+    doc = _keys_col.document(key_hash).get()
+    if doc.exists:
+        data = doc.to_dict()
+        data["key"] = key_hash  # All downstream functions use the hash
+        return data
+    # Legacy fallback: old keys stored with plaintext ID
+    doc = _keys_col.document(raw_key).get()
+    if doc.exists:
+        data = doc.to_dict()
+        data["key"] = raw_key
+        return data
+    return None
 
 
 def update_last_used(key: str, db_path: str | None = None):
@@ -123,42 +144,57 @@ def count_calls_today(api_key: str, db_path: str | None = None) -> int:
 
 def list_all_keys(db_path: str | None = None) -> list[dict]:
     docs = _keys_col.order_by("created_at", direction=firestore.Query.DESCENDING).stream()
-    return [doc.to_dict() for doc in docs]
+    results = []
+    for doc in docs:
+        d = doc.to_dict()
+        # Never expose raw keys or HMAC secrets in admin listings
+        d.pop("hmac_secret", None)
+        d.pop("key", None)
+        if "key_prefix" not in d:
+            # Legacy key: derive prefix from doc ID
+            d["key_prefix"] = doc.id[:10] + "..."
+        results.append(d)
+    return results
 
 
-def rotate_api_key(old_key: str) -> dict | None:
-    """Generate a new key, migrate usage history, deactivate old key."""
-    doc = _keys_col.document(old_key).get()
+def rotate_api_key(old_key_id: str) -> dict | None:
+    """Generate a new key, migrate usage history, deactivate old key.
+    old_key_id is the hash (or legacy plaintext) used as doc ID.
+    """
+    doc = _keys_col.document(old_key_id).get()
     if not doc.exists:
         return None
     old_data = doc.to_dict()
 
-    # Generate new key
-    new_key = "qr_" + secrets.token_hex(24)
+    # Generate new key (hashed)
+    raw_key = "qr_" + secrets.token_hex(24)
+    new_key_hash = _hash_key(raw_key)
     now = datetime.now(timezone.utc).isoformat()
 
-    # Create new key doc with same profile
     new_doc = {
-        "key": new_key,
+        "key_hash": new_key_hash,
+        "key_prefix": raw_key[:10] + "...",
         "name": old_data["name"],
         "email": old_data["email"],
         "tier": old_data["tier"],
         "is_active": 1,
         "created_at": now,
         "last_used_at": None,
-        "rotated_from": old_key,
+        "allowed_ips": old_data.get("allowed_ips", []),
+        "hmac_secret": old_data.get("hmac_secret"),
+        "rotated_from": old_key_id,
     }
-    _keys_col.document(new_key).set(new_doc)
+    _keys_col.document(new_key_hash).set(new_doc)
 
-    # Migrate usage logs to new key
-    old_usage = _usage_col.where("api_key", "==", old_key).stream()
+    # Migrate usage logs to new key hash
+    old_usage = _usage_col.where("api_key", "==", old_key_id).stream()
     for usage_doc in old_usage:
-        _usage_col.document(usage_doc.id).update({"api_key": new_key})
+        _usage_col.document(usage_doc.id).update({"api_key": new_key_hash})
 
     # Deactivate old key
-    _keys_col.document(old_key).update({"is_active": 0, "rotated_to": new_key, "rotated_at": now})
+    _keys_col.document(old_key_id).update({"is_active": 0, "rotated_to": new_key_hash, "rotated_at": now})
 
-    return {"key": new_key, "name": old_data["name"], "email": old_data["email"], "tier": old_data["tier"], "created_at": now}
+    return {"key": raw_key, "name": old_data["name"], "email": old_data["email"], "tier": old_data["tier"], "created_at": now}
 
 
 def deactivate_api_key(key: str) -> bool:
@@ -317,3 +353,34 @@ def check_connection() -> bool:
         return True
     except Exception:
         return False
+
+
+def migrate_plaintext_keys() -> int:
+    """One-time migration: rehash any legacy keys stored with plaintext doc IDs.
+    Returns count of keys migrated.
+    """
+    migrated = 0
+    for doc in _keys_col.stream():
+        doc_id = doc.id
+        # Legacy keys start with "qr_"; hashed keys are hex strings
+        if not doc_id.startswith("qr_"):
+            continue
+        data = doc.to_dict()
+        key_hash = _hash_key(doc_id)
+
+        # Create new doc with hashed ID
+        new_data = {k: v for k, v in data.items()}
+        new_data["key_hash"] = key_hash
+        new_data["key_prefix"] = doc_id[:10] + "..."
+        new_data.pop("key", None)  # Remove plaintext key field
+        _keys_col.document(key_hash).set(new_data)
+
+        # Migrate usage logs
+        for usage_doc in _usage_col.where("api_key", "==", doc_id).stream():
+            _usage_col.document(usage_doc.id).update({"api_key": key_hash})
+
+        # Delete old plaintext doc
+        _keys_col.document(doc_id).delete()
+        migrated += 1
+
+    return migrated

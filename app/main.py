@@ -4,13 +4,23 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+# Sentry must be initialized before other imports
+from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET, DEMO_RATE_LIMIT
+_sentry_dsn = __import__("os").getenv("SENTRY_DSN", "")
+if _sentry_dsn:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=ENV,
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+    )
+
 from fastapi import FastAPI, APIRouter, Query, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-
-from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET, DEMO_RATE_LIMIT
 from app.quantum_engine import QuantumEngine, VALID_BACKENDS
 from app.auth import require_api_key, get_ratelimit_info, TIER_LIMITS
 from app.database import (
@@ -29,6 +39,7 @@ from app.database import (
     update_allowed_ips,
     enable_signing,
     disable_signing,
+    migrate_plaintext_keys,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -834,6 +845,14 @@ def admin_update_tier(secret: str, key: str, body: TierUpdateRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"success": True, "data": {"message": f"Tier updated to {body.tier}", "key": key}}
+
+
+@app.post("/admin/{secret}/migrate-keys", include_in_schema=False)
+def admin_migrate_keys(secret: str):
+    """One-time migration: hash all legacy plaintext API key document IDs."""
+    _require_admin(secret)
+    count = migrate_plaintext_keys()
+    return {"success": True, "data": {"migrated": count, "message": f"Migrated {count} keys to hashed storage"}}
 
 
 # --- Authenticated generate endpoints ---

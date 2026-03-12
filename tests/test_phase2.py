@@ -27,17 +27,21 @@ def cleanup_test_data():
     """Clean up test data from Firestore after all tests."""
     yield
     for key in _test_keys:
-        try:
-            db._keys_col.document(key).delete()
-        except Exception:
-            pass
-        # Clean up usage logs for this key
-        try:
-            docs = db._usage_col.where("api_key", "==", key).stream()
-            for doc in docs:
-                doc.reference.delete()
-        except Exception:
-            pass
+        key_hash = db._hash_key(key)
+        # Try both hashed and legacy doc IDs
+        for doc_id in [key_hash, key]:
+            try:
+                db._keys_col.document(doc_id).delete()
+            except Exception:
+                pass
+        # Clean up usage logs for this key (by hash and raw)
+        for lookup in [key_hash, key]:
+            try:
+                docs = db._usage_col.where("api_key", "==", lookup).stream()
+                for doc in docs:
+                    doc.reference.delete()
+            except Exception:
+                pass
 
 
 def test_database_creation():

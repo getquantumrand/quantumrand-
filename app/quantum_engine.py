@@ -194,6 +194,14 @@ class QuantumEngine:
         bits = bitstrings[0]  # Take first shot
         return bits[:num_qubits]
 
+    def _run_ibm_with_fallback(self, num_qubits: int) -> str:
+        """Try IBM hardware, fall back to aer_simulator on failure."""
+        try:
+            return self._run_ibm(num_qubits)
+        except Exception as e:
+            logger.warning(f"IBM Quantum failed, falling back to aer_simulator: {e}")
+            return self._run_aer(min(num_qubits, MAX_QUBITS_PER_CIRCUIT))
+
     def _run_circuit(self, num_qubits: int, backend: str = "aer_simulator") -> str:
         """Run a quantum circuit on the specified backend with timeout."""
         if backend == "aer_simulator":
@@ -203,7 +211,7 @@ class QuantumEngine:
         elif backend == "origin_wuyuan":
             runner = lambda: self._run_origin(num_qubits, use_real_chip=True)
         elif backend == "ibm_hardware":
-            runner = lambda: self._run_ibm(num_qubits)
+            runner = lambda: self._run_ibm_with_fallback(num_qubits)
         else:
             raise ValueError(f"Unknown backend: {backend}. Choose from: {VALID_BACKENDS}")
 
