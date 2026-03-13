@@ -29,21 +29,32 @@ jobs:
         run: pip install -r requirements.txt pytest
 
       - name: Set up Firebase credentials
-        env:
-          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
         run: |
-          if [ -n "$FIREBASE_CREDENTIALS_JSON" ]; then
-            echo "$FIREBASE_CREDENTIALS_JSON" > /tmp/firebase-creds.json
-            echo "FIREBASE_CREDENTIALS=/tmp/firebase-creds.json" >> $GITHUB_ENV
-            # Clear the JSON env var so database.py uses the file path instead
-            echo "FIREBASE_CREDENTIALS_JSON=" >> $GITHUB_ENV
-            echo "Firebase credentials written to file"
-          fi
+          cat <<'ENDOFCREDS' > /tmp/firebase-creds.json
+          ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          ENDOFCREDS
+          # Clean up: remove leading whitespace from heredoc
+          python3 -c "
+          import json, sys
+          with open('/tmp/firebase-creds.json') as f:
+              raw = f.read().strip()
+          # Parse and re-serialize to fix any formatting issues
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              # Handle newlines in PEM key
+              data = json.loads(raw.replace(chr(10), '\\\\n').replace('\\\\n\\\\n', '\\\\n'))
+          with open('/tmp/firebase-creds.json', 'w') as f:
+              json.dump(data, f)
+          print('Firebase credentials file ready')
+          "
 
       - name: Run tests
+        env:
+          FIREBASE_CREDENTIALS: /tmp/firebase-creds.json
         run: |
-          if [ -z "$FIREBASE_CREDENTIALS" ]; then
-            echo "::warning::Firebase credentials not set — skipping Firestore-dependent tests"
+          if [ ! -s /tmp/firebase-creds.json ]; then
+            echo "::warning::Firebase credentials not available — skipping Firestore tests"
             python -m pytest tests/test_phase1.py -v -s --tb=short || true
           else
             python -m pytest tests/ -v -s --tb=short
