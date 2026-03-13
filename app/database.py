@@ -27,24 +27,26 @@ _CRED_PATH = os.getenv(
 _firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 if _firebase_cred_json:
     import json
-    import re
-    # GitHub Actions multiline secrets turn \n into real newlines.
-    def _fix_json_newlines(s):
-        return re.sub(
-            r'"((?:[^"\\]|\\.)*)"',
-            lambda m: '"' + m.group(1).replace('\n', '\\n') + '"',
-            s
-        )
     try:
         _firebase_cred = json.loads(_firebase_cred_json)
     except json.JSONDecodeError:
-        _firebase_cred = json.loads(_fix_json_newlines(_firebase_cred_json))
+        # GitHub Actions injects real newlines for \n in secrets.
+        # Replace newlines that aren't between -----BEGIN/END PRIVATE KEY----- markers,
+        # then parse. Simplest fix: replace ALL newlines with nothing, then fix the key.
+        _oneline = _firebase_cred_json.replace("\n", "").replace("\r", "")
+        _firebase_cred = json.loads(_oneline)
     # Ensure private_key has proper PEM newlines
     pk = _firebase_cred.get("private_key", "")
-    if pk and "\n" not in pk:
-        # All newlines were stripped; restore PEM structure
-        pk = pk.replace("\\n", "\n")
-        _firebase_cred["private_key"] = pk
+    if "-----BEGIN" in pk and pk.count("\n") < 5:
+        # PEM newlines were collapsed; reconstruct from base64 blocks
+        import re
+        # Extract header, base64 body, and footer
+        m = re.match(r'(-----BEGIN [^-]+-----)(.+)(-----END [^-]+-----)', pk.replace('\n', ''))
+        if m:
+            header, body, footer = m.group(1), m.group(2), m.group(3)
+            # Split base64 into 64-char lines
+            lines = [body[i:i+64] for i in range(0, len(body), 64)]
+            _firebase_cred["private_key"] = header + "\n" + "\n".join(lines) + "\n" + footer + "\n"
     cred = credentials.Certificate(_firebase_cred)
 elif os.path.exists(_CRED_PATH):
     cred = credentials.Certificate(_CRED_PATH)

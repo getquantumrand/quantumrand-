@@ -28,11 +28,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
 
-      - name: Debug Firebase JSON
-        env:
-          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
-        run: python3 -c "import os,json;raw=os.environ['FIREBASE_CREDENTIALS_JSON'];print('len:',len(raw));print('first80:',repr(raw[:80]));d=json.loads(raw);pk=d.get('private_key','');print('pk_len:',len(pk));print('pk_start:',repr(pk[:50]))" 2>&1 || echo "json.loads failed, trying with newline fix" && python3 -c "import os,json,re;raw=os.environ['FIREBASE_CREDENTIALS_JSON'];fixed=re.sub(r'(?<=\")([^\"]*?)(?=\")',lambda m:m.group(0).replace(chr(10),'\\\\n'),raw);d=json.loads(fixed);pk=d.get('private_key','');print('fixed_pk_len:',len(pk));print('fixed_pk_start:',repr(pk[:50]))" 2>&1 || echo "both failed"
-
       - name: Run tests
         env:
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
