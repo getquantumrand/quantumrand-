@@ -27,8 +27,13 @@ _CRED_PATH = os.getenv(
 _firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 if _firebase_cred_json:
     import json
-    # GitHub Actions may inject literal newlines into the JSON; use strict=False to handle control chars
-    cred = credentials.Certificate(json.loads(_firebase_cred_json, strict=False))
+    # GitHub Actions multiline secrets can mangle \n in PEM keys.
+    # First try normal parse; if that fails, escape literal newlines and retry.
+    try:
+        _firebase_cred = json.loads(_firebase_cred_json)
+    except json.JSONDecodeError:
+        _firebase_cred = json.loads(_firebase_cred_json.replace("\n", "\\n"))
+    cred = credentials.Certificate(_firebase_cred)
 elif os.path.exists(_CRED_PATH):
     cred = credentials.Certificate(_CRED_PATH)
 else:
