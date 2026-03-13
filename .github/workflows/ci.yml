@@ -33,17 +33,13 @@ jobs:
           cat <<'ENDOFCREDS' > /tmp/firebase-creds.json
           ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
           ENDOFCREDS
-          # Clean up: remove leading whitespace from heredoc
+          # Fix: GitHub injects real newlines for \n in the PEM key.
+          # Use strict=False to allow control chars, then re-serialize cleanly.
           python3 -c "
-          import json, sys
+          import json
           with open('/tmp/firebase-creds.json') as f:
               raw = f.read().strip()
-          # Parse and re-serialize to fix any formatting issues
-          try:
-              data = json.loads(raw)
-          except json.JSONDecodeError:
-              # Handle newlines in PEM key
-              data = json.loads(raw.replace(chr(10), '\\\\n').replace('\\\\n\\\\n', '\\\\n'))
+          data = json.loads(raw, strict=False)
           with open('/tmp/firebase-creds.json', 'w') as f:
               json.dump(data, f)
           print('Firebase credentials file ready')
