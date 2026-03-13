@@ -27,28 +27,7 @@ _CRED_PATH = os.getenv(
 _firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 if _firebase_cred_json:
     import json
-    try:
-        _firebase_cred = json.loads(_firebase_cred_json)
-    except json.JSONDecodeError:
-        # GitHub Actions injects real newlines for \n in secrets.
-        # Replace newlines that aren't between -----BEGIN/END PRIVATE KEY----- markers,
-        # then parse. Simplest fix: replace ALL newlines with nothing, then fix the key.
-        _oneline = _firebase_cred_json.replace("\n", "").replace("\r", "")
-        _firebase_cred = json.loads(_oneline)
-    # Ensure private_key has proper PEM newlines
-    pk = _firebase_cred.get("private_key", "")
-    if "-----BEGIN" in pk and pk.count("\n") < 5:
-        # PEM newlines were collapsed; reconstruct from base64 blocks
-        import re
-        # Strip whitespace and extract header, base64 body, and footer
-        pk_clean = re.sub(r'\s+', '', pk)
-        m = re.match(r'(-----BEGIN[A-Z ]+-----)(.+)(-----END[A-Z ]+-----)', pk_clean)
-        if m:
-            header, body, footer = m.group(1), m.group(2), m.group(3)
-            # Split base64 into 64-char lines
-            lines = [body[i:i+64] for i in range(0, len(body), 64)]
-            _firebase_cred["private_key"] = header + "\n" + "\n".join(lines) + "\n" + footer + "\n"
-    cred = credentials.Certificate(_firebase_cred)
+    cred = credentials.Certificate(json.loads(_firebase_cred_json))
 elif os.path.exists(_CRED_PATH):
     cred = credentials.Certificate(_CRED_PATH)
 else:

@@ -28,12 +28,22 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
 
-      - name: Run tests
+      - name: Set up Firebase credentials
         env:
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
         run: |
-          if [ -z "$FIREBASE_CREDENTIALS_JSON" ]; then
-            echo "::warning::FIREBASE_CREDENTIALS_JSON not set — skipping Firestore-dependent tests"
+          if [ -n "$FIREBASE_CREDENTIALS_JSON" ]; then
+            echo "$FIREBASE_CREDENTIALS_JSON" > /tmp/firebase-creds.json
+            echo "FIREBASE_CREDENTIALS=/tmp/firebase-creds.json" >> $GITHUB_ENV
+            echo "Firebase credentials written to file"
+          fi
+
+      - name: Run tests
+        env:
+          FIREBASE_CREDENTIALS_JSON: ""
+        run: |
+          if [ -z "$FIREBASE_CREDENTIALS" ]; then
+            echo "::warning::Firebase credentials not set — skipping Firestore-dependent tests"
             python -m pytest tests/test_phase1.py -v -s --tb=short || true
           else
             python -m pytest tests/ -v -s --tb=short
