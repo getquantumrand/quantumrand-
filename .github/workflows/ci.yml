@@ -28,6 +28,36 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
 
+      - name: Debug Firebase JSON
+        env:
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+        run: |
+          python3 -c "
+          import os, json
+          raw = os.environ.get('FIREBASE_CREDENTIALS_JSON', '')
+          print(f'Length: {len(raw)}')
+          print(f'First 100 chars: {repr(raw[:100])}')
+          try:
+              d = json.loads(raw)
+              pk = d.get('private_key', '')
+              print(f'JSON parsed OK. private_key length: {len(pk)}')
+              print(f'Has real newlines: {chr(10) in pk}')
+              print(f'Has escaped newlines: {\"\\\\n\" in pk}')
+              print(f'PEM starts with: {repr(pk[:40])}')
+          except Exception as e:
+              print(f'JSON parse failed: {e}')
+              # Try fix
+              import re
+              fixed = re.sub(r'\"((?:[^\"\\\\]|\\\\.)*)\"', lambda m: '\"' + m.group(1).replace(chr(10), '\\\\n') + '\"', raw)
+              try:
+                  d = json.loads(fixed)
+                  pk = d.get('private_key', '')
+                  print(f'Fixed JSON parsed. private_key length: {len(pk)}')
+                  print(f'PEM starts with: {repr(pk[:40])}')
+              except Exception as e2:
+                  print(f'Fixed JSON also failed: {e2}')
+          "
+
       - name: Run tests
         env:
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
