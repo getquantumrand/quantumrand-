@@ -40,8 +40,9 @@ if _firebase_cred_json:
     if "-----BEGIN" in pk and pk.count("\n") < 5:
         # PEM newlines were collapsed; reconstruct from base64 blocks
         import re
-        # Extract header, base64 body, and footer
-        m = re.match(r'(-----BEGIN [^-]+-----)(.+)(-----END [^-]+-----)', pk.replace('\n', ''))
+        # Strip whitespace and extract header, base64 body, and footer
+        pk_clean = re.sub(r'\s+', '', pk)
+        m = re.match(r'(-----BEGIN[A-Z ]+-----)(.+)(-----END[A-Z ]+-----)', pk_clean)
         if m:
             header, body, footer = m.group(1), m.group(2), m.group(3)
             # Split base64 into 64-char lines
