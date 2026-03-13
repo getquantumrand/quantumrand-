@@ -27,7 +27,8 @@ _CRED_PATH = os.getenv(
 _firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 if _firebase_cred_json:
     import json
-    cred = credentials.Certificate(json.loads(_firebase_cred_json))
+    # GitHub Actions may inject literal newlines into the JSON; use strict=False to handle control chars
+    cred = credentials.Certificate(json.loads(_firebase_cred_json, strict=False))
 elif os.path.exists(_CRED_PATH):
     cred = credentials.Certificate(_CRED_PATH)
 else:
