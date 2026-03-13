@@ -35,23 +35,33 @@ jobs:
           ENDOFCREDS
           # Fix: GitHub injects real newlines for \n in the PEM key.
           # Use strict=False to allow control chars, then re-serialize cleanly.
-          python3 -c "
+          python3 << 'PYEOF'
           import json, re
           with open('/tmp/firebase-creds.json') as f:
               raw = f.read().strip()
           data = json.loads(raw, strict=False)
-          # Reconstruct PEM: strip all whitespace from key, re-wrap at 64 chars
           pk = data.get('private_key', '')
-          m = re.match(r'-----BEGIN ([A-Z ]+)-----(.+)-----END ([A-Z ]+)-----', pk, re.DOTALL)
+          m = re.match(r'-----BEGIN\s+([A-Z ]+?)-----(.+)-----END\s+([A-Z ]+?)-----', pk, re.DOTALL)
           if m:
               tag = m.group(1).strip()
               body = re.sub(r'\s+', '', m.group(2))
               lines = [body[i:i+64] for i in range(0, len(body), 64)]
               data['private_key'] = '-----BEGIN ' + tag + '-----\n' + '\n'.join(lines) + '\n-----END ' + tag + '-----\n'
+          # Debug: verify PEM structure
+          pk2 = data['private_key']
+          print(f"PEM starts: {repr(pk2[:30])}")
+          print(f"PEM ends: {repr(pk2[-30:])}")
+          print(f"PEM lines: {pk2.count(chr(10))}")
+          # Write as proper JSON
           with open('/tmp/firebase-creds.json', 'w') as f:
               json.dump(data, f)
-          print('Firebase credentials file ready')
-          "
+          # Verify the file is readable
+          with open('/tmp/firebase-creds.json') as f:
+              verify = json.load(f)
+          from cryptography.hazmat.primitives.serialization import load_pem_private_key
+          load_pem_private_key(verify['private_key'].encode(), password=None)
+          print('PEM key verified OK')
+          PYEOF
 
       - name: Run tests
         env:
