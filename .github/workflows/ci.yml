@@ -36,10 +36,18 @@ jobs:
           # Fix: GitHub injects real newlines for \n in the PEM key.
           # Use strict=False to allow control chars, then re-serialize cleanly.
           python3 -c "
-          import json
+          import json, re
           with open('/tmp/firebase-creds.json') as f:
               raw = f.read().strip()
           data = json.loads(raw, strict=False)
+          # Reconstruct PEM: strip all whitespace from key, re-wrap at 64 chars
+          pk = data.get('private_key', '')
+          m = re.match(r'-----BEGIN ([A-Z ]+)-----(.+)-----END ([A-Z ]+)-----', pk, re.DOTALL)
+          if m:
+              tag = m.group(1).strip()
+              body = re.sub(r'\s+', '', m.group(2))
+              lines = [body[i:i+64] for i in range(0, len(body), 64)]
+              data['private_key'] = '-----BEGIN ' + tag + '-----\n' + '\n'.join(lines) + '\n-----END ' + tag + '-----\n'
           with open('/tmp/firebase-creds.json', 'w') as f:
               json.dump(data, f)
           print('Firebase credentials file ready')
