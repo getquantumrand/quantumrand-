@@ -35,12 +35,12 @@ jobs:
           if [ -n "$FIREBASE_CREDENTIALS_JSON" ]; then
             echo "$FIREBASE_CREDENTIALS_JSON" > /tmp/firebase-creds.json
             echo "FIREBASE_CREDENTIALS=/tmp/firebase-creds.json" >> $GITHUB_ENV
+            # Clear the JSON env var so database.py uses the file path instead
+            echo "FIREBASE_CREDENTIALS_JSON=" >> $GITHUB_ENV
             echo "Firebase credentials written to file"
           fi
 
       - name: Run tests
-        env:
-          FIREBASE_CREDENTIALS_JSON: ""
         run: |
           if [ -z "$FIREBASE_CREDENTIALS" ]; then
             echo "::warning::Firebase credentials not set — skipping Firestore-dependent tests"
