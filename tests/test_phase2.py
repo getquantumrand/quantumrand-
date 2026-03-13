@@ -95,7 +95,9 @@ def test_usage_logging(client, free_key):
     """Test 6: Usage logging records correctly."""
     # Make a request first
     client.get("/generate/bits?n=16&backend=aer_simulator", headers={"X-API-Key": free_key})
-    stats = db.get_usage_stats(free_key)
+    # Usage is logged under the key hash, not the raw key
+    key_hash = db._hash_key(free_key)
+    stats = db.get_usage_stats(key_hash)
     assert stats["total_calls"] >= 1
     assert stats["total_bits"] >= 8
     assert stats["calls_today"] >= 1
