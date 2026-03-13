@@ -47,20 +47,9 @@ jobs:
               body = re.sub(r'\s+', '', m.group(2))
               lines = [body[i:i+64] for i in range(0, len(body), 64)]
               data['private_key'] = '-----BEGIN ' + tag + '-----\n' + '\n'.join(lines) + '\n-----END ' + tag + '-----\n'
-          # Debug: verify PEM structure
-          pk2 = data['private_key']
-          print(f"PEM starts: {repr(pk2[:30])}")
-          print(f"PEM ends: {repr(pk2[-30:])}")
-          print(f"PEM lines: {pk2.count(chr(10))}")
-          # Write as proper JSON
           with open('/tmp/firebase-creds.json', 'w') as f:
               json.dump(data, f)
-          # Verify the file is readable
-          with open('/tmp/firebase-creds.json') as f:
-              verify = json.load(f)
-          from cryptography.hazmat.primitives.serialization import load_pem_private_key
-          load_pem_private_key(verify['private_key'].encode(), password=None)
-          print('PEM key verified OK')
+          print('Firebase credentials file ready')
           PYEOF
 
       - name: Run tests

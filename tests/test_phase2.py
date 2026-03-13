@@ -83,7 +83,7 @@ def test_invalid_key_returns_403(client):
 
 def test_authenticated_generate_bits(client, free_key):
     """Test 5: Authenticated request to /generate/bits works."""
-    resp = client.get("/generate/bits?n=8", headers={"X-API-Key": free_key})
+    resp = client.get("/generate/bits?n=8&backend=aer_simulator", headers={"X-API-Key": free_key})
     assert resp.status_code == 200
     data = resp.json()
     assert data["success"] is True
@@ -94,7 +94,7 @@ def test_authenticated_generate_bits(client, free_key):
 def test_usage_logging(client, free_key):
     """Test 6: Usage logging records correctly."""
     # Make a request first
-    client.get("/generate/bits?n=16", headers={"X-API-Key": free_key})
+    client.get("/generate/bits?n=16&backend=aer_simulator", headers={"X-API-Key": free_key})
     stats = db.get_usage_stats(free_key)
     assert stats["total_calls"] >= 1
     assert stats["total_bits"] >= 8
