@@ -608,6 +608,22 @@ def landing_page():
     return HTMLResponse(content=f"<h1>{APP_NAME}</h1>")
 
 
+@app.get("/terms", response_class=HTMLResponse, include_in_schema=False)
+def terms_page():
+    path = Path(__file__).parent / "static" / "terms.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+def privacy_page():
+    path = Path(__file__).parent / "static" / "privacy.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
 @app.get("/demo/bits", include_in_schema=False)
 def demo_bits(request: Request):
     """Unauthenticated demo endpoint for landing page (64 bits only, rate limited)."""

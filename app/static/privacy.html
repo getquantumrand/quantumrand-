@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — QuantumRand</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #0a0a0a; --surface: #111111; --border: #222222; --text: #e0e0e0; --text-muted: #888888; --accent: #4f8ef7; }
+    body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); line-height: 1.8; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 720px; margin: 0 auto; padding: 4rem 2rem; }
+    h1 { color: var(--accent); font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .updated { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 2rem; }
+    h2 { color: #fff; font-size: 1.1rem; margin: 2rem 0 0.75rem; }
+    p, li { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+    ul { padding-left: 1.5rem; }
+    .back { display: inline-block; margin-bottom: 2rem; font-size: 0.85rem; }
+    footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">&larr; Back to QuantumRand</a>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: March 19, 2026</p>
+
+    <h2>1. Information We Collect</h2>
+    <p>When you use QuantumRand, we collect the following information:</p>
+    <ul>
+      <li><strong>Account information:</strong> Name and email address provided during API key creation.</li>
+      <li><strong>Usage data:</strong> API endpoint called, number of bits requested, response time, and timestamp. This is linked to a hash of your API key, not the key itself.</li>
+      <li><strong>Technical data:</strong> IP address (for rate limiting only, not stored long-term).</li>
+    </ul>
+
+    <h2>2. Information We Do NOT Collect</h2>
+    <ul>
+      <li>We do not store your plaintext API key. Only a SHA-256 hash is retained.</li>
+      <li>We do not store the random numbers generated for you. Output is returned in the response and immediately discarded.</li>
+      <li>We do not use cookies or tracking pixels.</li>
+      <li>We do not sell, rent, or share your personal information with third parties.</li>
+    </ul>
+
+    <h2>3. How We Use Your Information</h2>
+    <ul>
+      <li>To authenticate API requests and enforce rate limits.</li>
+      <li>To provide usage statistics via the /keys/stats endpoint.</li>
+      <li>To monitor service health and investigate abuse.</li>
+      <li>To communicate important service updates (e.g., breaking changes, security notices).</li>
+    </ul>
+
+    <h2>4. Data Storage and Security</h2>
+    <p>Data is stored in Google Firebase Firestore. API keys are hashed with SHA-256 before storage. We use HTTPS for all API communication. Access to production systems is restricted to authorized personnel.</p>
+
+    <h2>5. Data Retention</h2>
+    <ul>
+      <li><strong>Account data:</strong> Retained until you request deletion or your key is revoked.</li>
+      <li><strong>Usage logs:</strong> Retained for up to 90 days for analytics, then automatically purged.</li>
+    </ul>
+
+    <h2>6. Your Rights</h2>
+    <p>You may request:</p>
+    <ul>
+      <li>A copy of the data we hold about your API key.</li>
+      <li>Deletion of your account and associated usage data.</li>
+      <li>Correction of inaccurate account information.</li>
+    </ul>
+    <p>To exercise these rights, contact us at <a href="mailto:privacy@quantumrand.io">privacy@quantumrand.io</a>.</p>
+
+    <h2>7. Third-Party Services</h2>
+    <p>We use the following third-party services:</p>
+    <ul>
+      <li><strong>Google Firebase:</strong> Database hosting (see <a href="https://firebase.google.com/support/privacy" target="_blank">Google's privacy policy</a>).</li>
+      <li><strong>Railway:</strong> Application hosting.</li>
+      <li><strong>IBM Quantum:</strong> Quantum hardware access (when ibm_hardware backend is selected).</li>
+      <li><strong>Sentry:</strong> Error monitoring (no PII is sent).</li>
+    </ul>
+
+    <h2>8. Changes to This Policy</h2>
+    <p>We may update this policy from time to time. Material changes will be communicated via the API or email. Continued use after changes constitutes acceptance.</p>
+
+    <h2>9. Contact</h2>
+    <p>For privacy-related questions, contact us at <a href="mailto:privacy@quantumrand.io">privacy@quantumrand.io</a>.</p>
+  </div>
+  <footer>&copy; 2026 QuantumRand. Built on quantum physics.</footer>
+</body>
+</html>
