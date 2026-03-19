@@ -17,6 +17,7 @@ if _sentry_dsn:
     )
 
 from fastapi import FastAPI, APIRouter, Query, HTTPException, Depends, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -580,6 +581,25 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={"success": False, "error": exc.detail, "request_id": request_id},
         headers=headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    request_id = getattr(request.state, "request_id", None) or uuid.uuid4().hex
+    errors = exc.errors()
+    # Build a human-friendly message from the first error
+    if errors:
+        e = errors[0]
+        field = ".".join(str(loc) for loc in e.get("loc", []) if loc != "query")
+        msg = e.get("msg", "Invalid input")
+        detail = f"{field}: {msg}" if field else msg
+    else:
+        detail = "Invalid request parameters"
+    return JSONResponse(
+        status_code=422,
+        content={"success": False, "error": detail, "request_id": request_id},
+        headers={"X-Request-ID": request_id},
     )
 
 
