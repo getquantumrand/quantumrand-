@@ -276,6 +276,14 @@ console.log(results[1].data.hex);    // "e9a1f3..."
 const stats = await qr.stats();
 console.log(`${stats.calls_today}/${stats.rate_limit.calls_per_day} calls used today`);
 ```
+
+---
+
+### Support
+
+Questions, bugs, or feature requests? Reach out at **[jbearswrld@proton.me](mailto:jbearswrld@proton.me)** or open an issue on [GitHub](https://github.com/getquantumrand/quantumrand-).
+
+[Status Page](/status) &bull; [Terms](/terms) &bull; [Privacy](/privacy)
 """
 
 CUSTOM_CSS = """
