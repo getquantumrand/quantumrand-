@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ENV = os.getenv("ENV", "development")
+ENV = os.getenv("APP_ENV", os.getenv("ENV", "development"))
 PORT = int(os.getenv("PORT", "8000"))
 API_VERSION = os.getenv("API_VERSION", "1.0.0")
 APP_NAME = "QuantumRand"
