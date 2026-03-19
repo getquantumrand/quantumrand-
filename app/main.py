@@ -18,6 +18,7 @@ if _sentry_dsn:
 
 from fastapi import FastAPI, APIRouter, Query, HTTPException, Depends, Request
 from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -571,11 +572,11 @@ async def request_logging(request: Request, call_next):
 
 # --- Global exception handler ---
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     request_id = getattr(request.state, "request_id", None) or uuid.uuid4().hex
     headers = {"X-Request-ID": request_id}
-    if exc.headers:
+    if getattr(exc, "headers", None):
         headers.update(exc.headers)
     return JSONResponse(
         status_code=exc.status_code,
