@@ -555,7 +555,7 @@ async def request_logging(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
 
     # Inject rate limit headers if available
-    rl = get_ratelimit_info()
+    rl = get_ratelimit_info(request)
     if rl:
         response.headers["X-RateLimit-Limit"] = str(rl["limit"])
         response.headers["X-RateLimit-Remaining"] = str(rl["remaining"])
@@ -665,7 +665,8 @@ def privacy_page():
 @app.get("/demo/bits", include_in_schema=False)
 def demo_bits(request: Request):
     """Unauthenticated demo endpoint for landing page (64 bits only, rate limited)."""
-    client_ip = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("x-forwarded-for")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
     if not _check_demo_rate(client_ip):
         raise HTTPException(status_code=429, detail="Demo rate limit exceeded. Try again in a minute.")
     try:

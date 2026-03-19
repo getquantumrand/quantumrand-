@@ -19,12 +19,15 @@ TIER_LIMITS = {
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-# Thread-local storage for passing rate limit info to middleware
+# Module-level holder for the current request's rate limit info.
+# Populated by require_api_key, read by middleware via request.state.
 _thread_local = threading.local()
 
 
-def get_ratelimit_info() -> dict | None:
+def get_ratelimit_info(request: Request = None) -> dict | None:
     """Retrieve rate limit info set by require_api_key for the current request."""
+    if request and hasattr(request.state, "ratelimit"):
+        return request.state.ratelimit
     return getattr(_thread_local, "ratelimit", None)
 
 
@@ -70,6 +73,7 @@ def _verify_hmac(request: Request, hmac_secret: str):
 
 def require_api_key(request: Request, x_api_key: str = Security(api_key_header)) -> dict:
     _thread_local.ratelimit = None
+    request.state.ratelimit = None
 
     if x_api_key is None:
         raise HTTPException(
@@ -103,13 +107,16 @@ def require_api_key(request: Request, x_api_key: str = Security(api_key_header))
     limits = TIER_LIMITS[tier]
     calls_today = count_calls_today(x_api_key)
     if calls_today >= limits["calls_per_day"]:
+        from datetime import datetime, timezone, timedelta
+        _now = datetime.now(timezone.utc)
+        _midnight = (_now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         raise HTTPException(
             status_code=429,
             detail=f"Rate limit exceeded. Your '{tier}' tier allows {limits['calls_per_day']} calls/day. Resets at midnight UTC.",
             headers={
                 "X-RateLimit-Limit": str(limits["calls_per_day"]),
                 "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset": "midnight UTC",
+                "X-RateLimit-Reset": str(int((_midnight - _now).total_seconds())),
             },
         )
 
@@ -124,11 +131,13 @@ def require_api_key(request: Request, x_api_key: str = Security(api_key_header))
         warning = f"Warning: {remaining} calls remaining today ({tier} tier). Resets at midnight UTC."
 
     # Store rate limit info for middleware to inject as response headers
-    _thread_local.ratelimit = {
+    rl_info = {
         "limit": limits["calls_per_day"],
         "remaining": remaining,
         "used": used,
         "warning": warning,
     }
+    _thread_local.ratelimit = rl_info
+    request.state.ratelimit = rl_info
 
     return key_record
