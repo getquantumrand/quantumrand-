@@ -1,5 +1,7 @@
 """QuantumRand API client."""
 
+from __future__ import annotations
+
 import hashlib
 import hmac as hmac_mod
 import time
@@ -44,7 +46,7 @@ class QuantumRandClient:
         qr = QuantumRandClient("qr_key", hmac_secret="your_secret")
     """
 
-    DEFAULT_BASE_URL = "https://quantumrand.up.railway.app"
+    DEFAULT_BASE_URL = "https://quantumrand-production.up.railway.app"
 
     def __init__(
         self,
