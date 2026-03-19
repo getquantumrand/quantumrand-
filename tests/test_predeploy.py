@@ -29,7 +29,7 @@ def test_landing_page_serves_html(client):
     resp = client.get("/")
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
-    assert "QUANTUMRAND" in resp.text.upper() or "QuantumRand" in resp.text or "QUANDRAND" in resp.text or "Quandrand" in resp.text
+    assert "QUANTUMRAND" in resp.text.upper() or "QuantumRand" in resp.text
     print("  OK: Landing page serves HTML with QuantumRand branding")
 
 
