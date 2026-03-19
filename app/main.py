@@ -662,6 +662,14 @@ def privacy_page():
     raise HTTPException(status_code=404, detail="Not found")
 
 
+@app.get("/status", response_class=HTMLResponse, include_in_schema=False)
+def status_page():
+    path = Path(__file__).parent / "static" / "status.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
 @app.get("/demo/bits", include_in_schema=False)
 def demo_bits(request: Request):
     """Unauthenticated demo endpoint for landing page (64 bits only, rate limited)."""
