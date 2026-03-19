@@ -482,14 +482,18 @@
   <!-- Header -->
   <header>
     <div class="logo">QUANTUM<span>RAND</span></div>
-    <a href="/docs" class="btn btn-outline">Get API Key</a>
+    <nav style="display:flex;gap:1rem;align-items:center;">
+      <a href="#pricing" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">Pricing</a>
+      <a href="/docs" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">Docs</a>
+      <a href="/docs#/default/create_key_keys_create_post" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.8rem;">Get API Key</a>
+    </nav>
   </header>
 
   <!-- Hero -->
   <section class="hero">
     <h1>True Quantum Randomness.<br><span class="accent">One Line of Code.</span></h1>
     <p>Every key, token, and secret your app creates decided by physics &mdash; not math. Powered by a real quantum computer.</p>
-    <a href="/docs" class="btn btn-primary">Get Your Free API Key &rarr;</a>
+    <a href="/docs#/default/create_key_keys_create_post" class="btn btn-primary">Get Your Free API Key &rarr;</a>
   </section>
 
   <!-- Code Example -->
@@ -514,8 +518,13 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
       </div>
       <div class="code-panel" id="tab-curl">
 <pre><span class="fn">curl</span> <span class="flag">-H</span> <span class="str">"X-API-Key: qr_your_key"</span> \
-  https://api.quantumrand.dev/generate/key?bits=<span class="num">256</span></pre>
+  https://quantumrand-production.up.railway.app/generate/hex?n=<span class="num">256</span></pre>
       </div>
+    </div>
+    <div style="text-align:center;margin-top:2rem;">
+      <span style="font-size:0.8rem;color:var(--text-muted);">Install via</span>&nbsp;&nbsp;
+      <code style="background:var(--surface);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.8rem;color:var(--accent);border:1px solid var(--border);">pip install quantumrand</code>&nbsp;&nbsp;
+      <code style="background:var(--surface);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.8rem;color:var(--accent);border:1px solid var(--border);">npm install quantumrand</code>
     </div>
   </section>
 
@@ -543,7 +552,7 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
   </section>
 
   <!-- Pricing -->
-  <section>
+  <section id="pricing">
     <div class="section-label">Pricing</div>
     <div class="section-title">Start free. Scale when you're ready.</div>
     <div class="pricing-grid">
