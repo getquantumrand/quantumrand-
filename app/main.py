@@ -851,6 +851,12 @@ def health():
 
     response_time_ms = round((time.time() - _health_start) * 1000, 2)
 
+    # IBM Quantum connectivity check (non-blocking, just config check)
+    from app.config import IBM_QUANTUM_ENABLED
+    ibm_status = "configured" if IBM_QUANTUM_ENABLED else "not_configured"
+
+    response_time_ms = round((time.time() - _health_start) * 1000, 2)
+
     return JSONResponse(
         status_code=status_code,
         content={
@@ -862,6 +868,7 @@ def health():
                 "uptime_seconds": uptime_seconds,
                 "database": "connected" if db_ok else "disconnected",
                 "quantum_engine": "healthy" if engine_ok else "unhealthy",
+                "ibm_quantum": ibm_status,
                 "entropy_pool": pool_stats(),
                 "memory_mb": memory_mb,
                 "response_time_ms": response_time_ms,
@@ -1072,8 +1079,8 @@ def admin_migrate_keys(secret: str):
 
 # --- Authenticated generate endpoints ---
 
-def _log_and_update(api_key: str, endpoint: str, bits: int, elapsed_ms: float):
-    log_usage(api_key, endpoint, bits, elapsed_ms)
+def _log_and_update(api_key: str, endpoint: str, bits: int, elapsed_ms: float, backend: str = ""):
+    log_usage(api_key, endpoint, bits, elapsed_ms, backend=backend)
     update_last_used(api_key)
 
 
@@ -1099,7 +1106,7 @@ def generate_bits(
     except RuntimeError as e:
         logger.error(f"generate_bits failed: {e}")
         raise HTTPException(status_code=502, detail="Quantum backend unavailable. Try aer_simulator or retry later.")
-    _log_and_update(key_record["key"], "/generate/bits", n, result["elapsed_ms"])
+    _log_and_update(key_record["key"], "/generate/bits", n, result["elapsed_ms"], backend=result.get("source", backend))
     return {"success": True, "data": result}
 
 
@@ -1127,7 +1134,7 @@ def generate_hex(
     except RuntimeError as e:
         logger.error(f"generate_hex failed: {e}")
         raise HTTPException(status_code=502, detail="Quantum backend unavailable. Try aer_simulator or retry later.")
-    _log_and_update(key_record["key"], "/generate/hex", n, result["elapsed_ms"])
+    _log_and_update(key_record["key"], "/generate/hex", n, result["elapsed_ms"], backend=result.get("source", backend))
     return {
         "success": True,
         "data": {
@@ -1157,7 +1164,7 @@ def generate_integer(
         result = engine.generate_integer(min, max, backend)
     except (ValueError, RuntimeError):
         raise HTTPException(status_code=400, detail="Failed to generate integer. Try a smaller range.")
-    _log_and_update(key_record["key"], "/generate/integer", result["bits_used"], result["elapsed_ms"])
+    _log_and_update(key_record["key"], "/generate/integer", result["bits_used"], result["elapsed_ms"], backend=result.get("source", backend))
     return {"success": True, "data": result}
 
 
@@ -1183,7 +1190,7 @@ def generate_key(
     except RuntimeError as e:
         logger.error(f"generate_key failed: {e}")
         raise HTTPException(status_code=502, detail="Quantum backend unavailable. Try aer_simulator or retry later.")
-    _log_and_update(key_record["key"], "/generate/key", bits, result["elapsed_ms"])
+    _log_and_update(key_record["key"], "/generate/key", bits, result["elapsed_ms"], backend=result.get("source", backend))
     return {"success": True, "data": result}
 
 
@@ -1250,7 +1257,7 @@ def generate_batch(
         except Exception:
             results.append({"index": i, "type": req_type, "error": "Unexpected error processing request"})
 
-    _log_and_update(key_record["key"], "/generate/batch", total_bits, total_elapsed)
+    _log_and_update(key_record["key"], "/generate/batch", total_bits, total_elapsed, backend=backend)
     return {
         "success": True,
         "data": {

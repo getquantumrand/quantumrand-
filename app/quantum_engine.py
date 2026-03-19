@@ -194,24 +194,29 @@ class QuantumEngine:
         bits = bitstrings[0]  # Take first shot
         return bits[:num_qubits]
 
-    def _run_ibm_with_fallback(self, num_qubits: int) -> str:
-        """Try IBM hardware, fall back to aer_simulator on failure."""
+    def _run_ibm_with_fallback(self, num_qubits: int) -> tuple[str, bool]:
+        """Try IBM hardware, fall back to aer_simulator on failure.
+        Returns (bitstring, fell_back)."""
         try:
-            return self._run_ibm(num_qubits)
+            return self._run_ibm(num_qubits), False
         except Exception as e:
             logger.warning(f"IBM Quantum failed, falling back to aer_simulator: {e}")
-            return self._run_aer(min(num_qubits, MAX_QUBITS_PER_CIRCUIT))
+            return self._run_aer(min(num_qubits, MAX_QUBITS_PER_CIRCUIT)), True
 
-    def _run_circuit(self, num_qubits: int, backend: str = "aer_simulator") -> str:
-        """Run a quantum circuit on the specified backend with timeout."""
+    def _run_circuit(self, num_qubits: int, backend: str = "aer_simulator") -> tuple[str, str]:
+        """Run a quantum circuit on the specified backend with timeout.
+        Returns (bitstring, actual_source) — actual_source may differ from backend if fallback occurred."""
         if backend == "aer_simulator":
-            runner = lambda: self._run_aer(num_qubits)
+            runner = lambda: (self._run_aer(num_qubits), "aer_simulator")
         elif backend == "origin_cloud":
-            runner = lambda: self._run_origin(num_qubits, use_real_chip=False)
+            runner = lambda: (self._run_origin(num_qubits, use_real_chip=False), "origin_cloud")
         elif backend == "origin_wuyuan":
-            runner = lambda: self._run_origin(num_qubits, use_real_chip=True)
+            runner = lambda: (self._run_origin(num_qubits, use_real_chip=True), "origin_wuyuan")
         elif backend == "ibm_hardware":
-            runner = lambda: self._run_ibm_with_fallback(num_qubits)
+            def _ibm_runner():
+                bits, fell_back = self._run_ibm_with_fallback(num_qubits)
+                return bits, "aer_simulator (ibm_fallback)" if fell_back else "ibm_hardware"
+            runner = _ibm_runner
         else:
             raise ValueError(f"Unknown backend: {backend}. Choose from: {VALID_BACKENDS}")
 
@@ -258,10 +263,13 @@ class QuantumEngine:
             max_chunk = MAX_QUBITS_PER_CIRCUIT
 
         all_bits = ""
+        actual_source = backend
         remaining = num_bits
         while remaining > 0:
             chunk = min(remaining, max_chunk)
-            all_bits += self._run_circuit(chunk, backend)
+            bits, source = self._run_circuit(chunk, backend)
+            all_bits += bits
+            actual_source = source  # last chunk's source
             remaining -= chunk
         elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
 
@@ -275,7 +283,7 @@ class QuantumEngine:
             "hex": hex_str,
             "bytes": byte_vals,
             "elapsed_ms": elapsed_ms,
-            "source": backend,
+            "source": actual_source,
         }
 
     def generate_integer(self, min_val: int, max_val: int, backend: str = "aer_simulator") -> dict:
@@ -286,7 +294,7 @@ class QuantumEngine:
         if num_bits == 0:
             num_bits = 1
         while True:
-            bits = self._run_circuit(num_bits, backend)
+            bits, actual_source = self._run_circuit(num_bits, backend)
             value = int(bits, 2)
             if value < range_size:
                 result = min_val + value
@@ -297,7 +305,7 @@ class QuantumEngine:
                     "max": max_val,
                     "bits_used": num_bits,
                     "elapsed_ms": elapsed_ms,
-                    "source": backend,
+                    "source": actual_source,
                 }
 
     def generate_key(self, bits: int, backend: str = "aer_simulator") -> dict:

@@ -97,15 +97,18 @@ def update_last_used(key: str, db_path: str | None = None):
     _keys_col.document(key).update({"last_used_at": now})
 
 
-def log_usage(api_key: str, endpoint: str, bits_requested: int = 0, elapsed_ms: float = 0, db_path: str | None = None):
+def log_usage(api_key: str, endpoint: str, bits_requested: int = 0, elapsed_ms: float = 0, backend: str = "", db_path: str | None = None):
     now = datetime.now(timezone.utc).isoformat()
-    _usage_col.add({
+    doc = {
         "api_key": api_key,
         "endpoint": endpoint,
         "bits_requested": bits_requested,
         "elapsed_ms": elapsed_ms,
         "timestamp": now,
-    })
+    }
+    if backend:
+        doc["backend"] = backend
+    _usage_col.add(doc)
 
 
 def get_usage_stats(api_key: str, db_path: str | None = None) -> dict:

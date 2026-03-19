@@ -104,6 +104,10 @@
         <span class="component-name">Entropy Pool</span>
         <span class="component-status checking" id="statusPool">checking...</span>
       </div>
+      <div class="component">
+        <span class="component-name">IBM Quantum</span>
+        <span class="component-status checking" id="statusIbm">checking...</span>
+      </div>
     </div>
 
     <div class="metrics">
@@ -176,6 +180,9 @@
         var pool = d.entropy_pool || {};
         var poolOk = pool.pool_healthy !== false;
         setStatus('statusPool', poolOk, poolOk ? 'operational (' + pool.pool_size_bits + ' bits)' : 'filling...');
+
+        var ibm = d.ibm_quantum || 'not_configured';
+        setStatus('statusIbm', ibm === 'configured', ibm === 'configured' ? 'connected' : 'not configured');
 
         document.getElementById('metricUptime').textContent = formatUptime(d.uptime_seconds || 0);
         document.getElementById('metricLatency').textContent = clientLatency;
