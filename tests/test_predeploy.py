@@ -79,3 +79,21 @@ def test_global_error_handler(client):
     resp = client.get("/nonexistent-endpoint")
     assert resp.status_code in (404, 405)
     print("  OK: Unknown routes return proper status codes")
+
+
+def test_terms_page_serves_html(client):
+    """/terms returns HTML containing Terms of Service."""
+    resp = client.get("/terms")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "Terms of Service" in resp.text
+    print("  OK: /terms serves HTML with Terms of Service content")
+
+
+def test_privacy_page_serves_html(client):
+    """/privacy returns HTML containing Privacy Policy."""
+    resp = client.get("/privacy")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "Privacy Policy" in resp.text
+    print("  OK: /privacy serves HTML with Privacy Policy content")

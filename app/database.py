@@ -355,6 +355,19 @@ def check_connection() -> bool:
         return False
 
 
+def purge_old_usage_logs(days: int = 90) -> int:
+    """Delete usage_log documents older than `days` days. Returns count of deleted docs."""
+    from datetime import timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    deleted = 0
+    for doc in _usage_col.stream():
+        d = doc.to_dict()
+        if d.get("timestamp", "") < cutoff:
+            _usage_col.document(doc.id).delete()
+            deleted += 1
+    return deleted
+
+
 def migrate_plaintext_keys() -> int:
     """One-time migration: rehash any legacy keys stored with plaintext doc IDs.
     Returns count of keys migrated.

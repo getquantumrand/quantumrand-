@@ -40,6 +40,7 @@ from app.database import (
     enable_signing,
     disable_signing,
     migrate_plaintext_keys,
+    purge_old_usage_logs,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -101,6 +102,18 @@ def _require_admin(secret: str):
         raise HTTPException(status_code=403, detail="Invalid admin secret")
 
 
+def _schedule_purge():
+    """Run purge_old_usage_logs, log the result, then re-schedule itself for 24 hours later."""
+    try:
+        deleted = purge_old_usage_logs()
+        logger.info(f"Usage log auto-purge: deleted {deleted} documents older than 90 days")
+    except Exception as e:
+        logger.warning(f"Usage log auto-purge failed: {e}")
+    t = _threading.Timer(86400, _schedule_purge)
+    t.daemon = True
+    t.start()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start embedded quantum simulator on boot if Origin backend is enabled."""
@@ -112,6 +125,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Could not start embedded simulator: {e}")
     start_pool()
+    _schedule_purge()
     yield
     if PILOTOS_ENABLED:
         try:
@@ -544,7 +558,10 @@ async def request_logging(request: Request, call_next):
         response.headers["X-RateLimit-Limit"] = str(rl["limit"])
         response.headers["X-RateLimit-Remaining"] = str(rl["remaining"])
         response.headers["X-RateLimit-Used"] = str(rl["used"])
-        response.headers["X-RateLimit-Reset"] = "midnight UTC"
+        from datetime import datetime, timezone, timedelta
+        _now = datetime.now(timezone.utc)
+        _midnight = (_now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        response.headers["X-RateLimit-Reset"] = str(int((_midnight - _now).total_seconds()))
         if rl.get("warning"):
             response.headers["X-RateLimit-Warning"] = rl["warning"]
 
@@ -670,7 +687,8 @@ def api_info():
 @app.get("/health", summary="Health Check",
          description="System health check for all components. Returns status of database, quantum engine, uptime, and environment.")
 def health():
-    uptime_seconds = round(time.time() - START_TIME, 2)
+    _health_start = time.time()
+    uptime_seconds = round(_health_start - START_TIME, 2)
     try:
         db_ok = check_connection()
     except Exception:
@@ -679,6 +697,17 @@ def health():
     engine_ok = engine_result.get("status") == "healthy"
     overall = "healthy" if (db_ok and engine_ok) else "unhealthy"
     status_code = 200 if overall == "healthy" else 503
+
+    try:
+        import resource as _resource
+        import platform as _platform
+        _rss = _resource.getrusage(_resource.RUSAGE_SELF).ru_maxrss
+        # macOS ru_maxrss is in bytes; Linux is in kilobytes
+        memory_mb = round(_rss / 1024 / 1024 if _platform.system() == "Darwin" else _rss / 1024, 2)
+    except Exception:
+        memory_mb = None
+
+    response_time_ms = round((time.time() - _health_start) * 1000, 2)
 
     return JSONResponse(
         status_code=status_code,
@@ -692,6 +721,8 @@ def health():
                 "database": "connected" if db_ok else "disconnected",
                 "quantum_engine": "healthy" if engine_ok else "unhealthy",
                 "entropy_pool": pool_stats(),
+                "memory_mb": memory_mb,
+                "response_time_ms": response_time_ms,
             },
         },
     )
