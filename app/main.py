@@ -747,6 +747,59 @@ class AllowedIpsRequest(BaseModel):
     ips: list[str]
 
 
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+
+
+# --- Auth endpoints ---
+
+@app.post("/auth/signup", include_in_schema=False)
+def auth_signup(body: AuthRequest):
+    from app.user_auth import signup
+    try:
+        result = signup(body.email, body.password)
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/auth/login", include_in_schema=False)
+def auth_login(body: AuthRequest):
+    from app.user_auth import login
+    try:
+        result = login(body.email, body.password)
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.get("/auth/me", include_in_schema=False)
+def auth_me(request: Request):
+    from app.user_auth import get_current_user
+    from app.database import get_usage_stats, _hash_key
+    from app.auth import TIER_LIMITS
+    user = get_current_user(request)
+    key_hash = user.get("api_key_hash", "")
+    stats = get_usage_stats(key_hash)
+    tier = user.get("tier", "free")
+    limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
+    return {
+        "success": True,
+        "data": {
+            "email": user["email"],
+            "tier": tier,
+            "api_key_prefix": user.get("api_key_prefix", ""),
+            "usage": {
+                "calls_today": stats.get("calls_today", 0),
+                "calls_limit": limits["calls_per_day"],
+                "total_calls": stats.get("total_calls", 0),
+                "total_bits": stats.get("total_bits", 0),
+            },
+        },
+    }
+
+
 # --- Public endpoints ---
 
 @app.get("/", response_class=HTMLResponse, summary="Landing Page",
@@ -769,6 +822,30 @@ def terms_page():
 @app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
 def privacy_page():
     path = Path(__file__).parent / "static" / "privacy.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/signup", response_class=HTMLResponse, include_in_schema=False)
+def signup_page():
+    path = Path(__file__).parent / "static" / "signup.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/login", response_class=HTMLResponse, include_in_schema=False)
+def login_page():
+    path = Path(__file__).parent / "static" / "login.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
+def dashboard_page():
+    path = Path(__file__).parent / "static" / "dashboard.html"
     if path.exists():
         return HTMLResponse(content=path.read_text())
     raise HTTPException(status_code=404, detail="Not found")

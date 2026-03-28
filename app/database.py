@@ -39,6 +39,7 @@ db = firestore.client()
 # Collection references
 _keys_col = db.collection("api_keys")
 _usage_col = db.collection("usage_log")
+_users_col = db.collection("users")
 
 
 def init_db(db_path: str | None = None):
@@ -369,6 +370,51 @@ def purge_old_usage_logs(days: int = 90) -> int:
             _usage_col.document(doc.id).delete()
             deleted += 1
     return deleted
+
+
+def create_user(email: str, password_hash: str) -> dict:
+    """Create a new user account. Returns user dict with auto-generated API key."""
+    # Check if email already exists
+    existing = list(_users_col.where("email", "==", email).limit(1).stream())
+    if existing:
+        raise ValueError("Email already registered")
+
+    now = datetime.now(timezone.utc).isoformat()
+    user_id = secrets.token_hex(16)
+
+    # Auto-generate API key for the user
+    key_result = create_api_key(email.split("@")[0], email, "free")
+    key_hash = _hash_key(key_result["key"])
+
+    doc = {
+        "user_id": user_id,
+        "email": email,
+        "password_hash": password_hash,
+        "api_key_hash": key_hash,
+        "api_key_prefix": key_result["key"][:10] + "...",
+        "tier": "free",
+        "created_at": now,
+    }
+    _users_col.document(user_id).set(doc)
+    return {"user_id": user_id, "email": email, "api_key": key_result["key"], "tier": "free", "created_at": now}
+
+
+def get_user_by_email(email: str) -> dict | None:
+    """Look up a user by email."""
+    docs = list(_users_col.where("email", "==", email).limit(1).stream())
+    if not docs:
+        return None
+    data = docs[0].to_dict()
+    data["doc_id"] = docs[0].id
+    return data
+
+
+def get_user_by_id(user_id: str) -> dict | None:
+    """Look up a user by ID."""
+    doc = _users_col.document(user_id).get()
+    if not doc.exists:
+        return None
+    return doc.to_dict()
 
 
 def migrate_plaintext_keys() -> int:

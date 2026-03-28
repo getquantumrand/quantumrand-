@@ -1,4 +1,5 @@
 import os
+import secrets
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,3 +42,4 @@ DEMO_RATE_LIMIT = int(os.getenv("DEMO_RATE_LIMIT", "10"))  # requests per minute
 
 # Request timeout for quantum circuit execution (seconds)
 CIRCUIT_TIMEOUT = int(os.getenv("CIRCUIT_TIMEOUT", "30"))
+JWT_SECRET = os.getenv("JWT_SECRET", secrets.token_hex(32))

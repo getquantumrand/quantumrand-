@@ -3,10 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuantumRand Dashboard</title>
+  <title>Dashboard — QuantumRand</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     :root {
       --bg: #0a0a0a;
@@ -17,12 +23,13 @@
       --text-muted: #888888;
       --accent: #4f8ef7;
       --accent-glow: rgba(79, 142, 247, 0.15);
-      --green: #22c55e;
-      --yellow: #eab308;
-      --red: #ef4444;
-      --purple: #a855f7;
+      --accent-hover: #6ba0ff;
       --radius: 10px;
+      --success: #98c379;
+      --error: #e06c75;
     }
+
+    html { scroll-behavior: smooth; }
 
     body {
       font-family: 'JetBrains Mono', monospace;
@@ -30,423 +37,584 @@
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 2rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
+    a {
+      color: var(--accent);
+      text-decoration: none;
     }
 
-    .logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.15em; color: #fff; }
-    .logo span { color: var(--accent); }
-    .badge { font-size: 0.65rem; background: var(--accent-glow); color: var(--accent); padding: 0.25rem 0.6rem; border-radius: 20px; margin-left: 0.75rem; font-weight: 600; }
+    a:hover { color: var(--accent-hover); }
 
-    .refresh-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-
-    /* Stat Cards */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      transition: border-color 0.2s;
-    }
-    .stat-card:hover { border-color: var(--accent); }
-
-    .stat-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .stat-sub {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-
-    /* Panels */
-    .panels {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .panel-header {
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 0.05em;
-    }
-
-    .panel-body { padding: 1.5rem; }
-
-    /* Chart */
-    .chart-container {
-      width: 100%;
-      height: 200px;
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      padding-top: 1rem;
-    }
-
-    .chart-bar-wrap {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      justify-content: flex-end;
-    }
-
-    .chart-bar {
-      width: 100%;
-      background: var(--accent);
-      border-radius: 3px 3px 0 0;
-      min-height: 2px;
-      transition: height 0.5s ease, background 0.2s;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .chart-bar:hover { background: var(--accent-glow); background-color: #6ba0ff; }
-
-    .chart-bar .tooltip {
-      display: none;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.65rem;
-      color: var(--text);
-      white-space: nowrap;
-      z-index: 10;
-    }
-
-    .chart-bar:hover .tooltip { display: block; }
-
-    .chart-label {
-      font-size: 0.55rem;
-      color: var(--text-muted);
-      margin-top: 0.5rem;
-      transform: rotate(-45deg);
-      white-space: nowrap;
-    }
-
-    /* Top Users Table */
-    .user-table { width: 100%; }
-
-    .user-row {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.78rem;
-    }
-    .user-row:last-child { border-bottom: none; }
-
-    .user-rank {
-      width: 28px;
-      height: 28px;
+    /* ── Loading overlay ─────────────────────── */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      background: var(--accent-glow);
-      color: var(--accent);
-      font-size: 0.7rem;
-      font-weight: 700;
-      margin-right: 1rem;
-      flex-shrink: 0;
-    }
-
-    .user-name { flex: 1; color: #fff; font-weight: 500; }
-    .user-calls { color: var(--text-muted); margin-left: 1rem; }
-    .user-bits { color: var(--accent); margin-left: 1rem; font-size: 0.7rem; }
-
-    /* Endpoint breakdown */
-    .endpoint-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.78rem;
-    }
-    .endpoint-row:last-child { border-bottom: none; }
-
-    .endpoint-name { color: var(--accent); font-weight: 500; }
-    .endpoint-count { color: var(--text-muted); }
-
-    .endpoint-bar-bg {
-      flex: 1;
-      height: 4px;
-      background: var(--surface-2);
-      border-radius: 2px;
-      margin: 0 1rem;
-      overflow: hidden;
-    }
-
-    .endpoint-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      transition: width 0.5s ease;
-    }
-
-    /* Tier badges */
-    .tier-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-    }
-
-    .tier-card {
-      background: var(--surface-2);
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .tier-name {
-      font-size: 0.65rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 0.4rem;
-    }
-
-    .tier-count {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 3rem;
-      color: var(--text-muted);
+      z-index: 999;
       font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
     }
 
-    .loading::after {
+    #loadingOverlay::after {
       content: '';
       display: inline-block;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       border: 2px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
       margin-left: 0.75rem;
       animation: spin 0.8s linear infinite;
-      vertical-align: middle;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Bottom panels */
-    .bottom-panels {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
+    /* ── Header ──────────────────────────────── */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
     }
 
-    /* Responsive */
-    @media (max-width: 900px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .panels, .bottom-panels { grid-template-columns: 1fr; }
+    .logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+      text-decoration: none;
     }
 
+    .logo span { color: var(--accent); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .user-email {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Buttons ─────────────────────────────── */
+    .btn {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-size: 0.82rem;
+      padding: 0.5rem 1.1rem;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-accent:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    /* ── Main layout ─────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 7rem 2rem 4rem;
+    }
+
+    .page-eyebrow {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .page-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Cards ───────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.1rem;
+    }
+
+    /* ── API Key card ────────────────────────── */
+    .key-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .key-display {
+      flex: 1;
+      min-width: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.7rem 1rem;
+      font-size: 0.88rem;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: all;
+    }
+
+    .key-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .copy-feedback {
+      font-size: 0.72rem;
+      color: var(--success);
+      margin-top: 0.55rem;
+      height: 1em;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .copy-feedback.show { opacity: 1; }
+
+    /* ── Usage card ──────────────────────────── */
+    .usage-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.9rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .usage-count {
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .tier-badge {
+      display: inline-block;
+      padding: 0.2rem 0.75rem;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.6s ease;
+      width: 0%;
+    }
+
+    .usage-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.73rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Quick Start card ────────────────────── */
+    .code-window {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .code-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-tab {
+      padding: 0.65rem 1.3rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .code-tab:hover { color: var(--text); }
+
+    .code-tab.active { color: var(--accent); }
+
+    .code-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    .code-panel {
+      display: none;
+      padding: 1.5rem;
+      font-size: 0.83rem;
+      line-height: 1.9;
+      overflow-x: auto;
+    }
+
+    .code-panel.active { display: block; }
+
+    .code-panel pre { margin: 0; white-space: pre; }
+
+    .code-panel .kw   { color: #c678dd; }
+    .code-panel .fn   { color: #61afef; }
+    .code-panel .str  { color: #98c379; }
+    .code-panel .num  { color: #d19a66; }
+    .code-panel .cmt  { color: #555; }
+    .code-panel .op   { color: #56b6c2; }
+    .code-panel .flag { color: #e06c75; }
+
+    /* ── Responsive ──────────────────────────── */
     @media (max-width: 600px) {
-      .stats-grid { grid-template-columns: 1fr; }
-      .container { padding: 1rem; }
+      header { padding: 0.85rem 1.25rem; }
+
+      .header-right .user-email { display: none; }
+
+      main { padding: 6rem 1.25rem 3rem; }
+
+      .card { padding: 1.25rem; }
+
+      .key-row { flex-direction: column; align-items: stretch; }
+
+      .key-actions { width: 100%; }
+
+      .key-actions .btn { flex: 1; text-align: center; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Auth loading overlay -->
+  <div id="loadingOverlay">Authenticating</div>
+
+  <!-- Header -->
   <header>
-    <div style="display:flex;align-items:center;">
-      <div class="logo">QUANTUM<span>RAND</span></div>
-      <span class="badge">ADMIN DASHBOARD</span>
+    <a href="/" class="logo">QUANTUM<span>RAND</span></a>
+    <div class="header-right">
+      <span class="user-email" id="headerEmail"></span>
+      <button class="btn btn-outline" onclick="logout()">Log out</button>
     </div>
-    <button class="refresh-btn" onclick="loadData()">Refresh</button>
   </header>
 
-  <div class="container">
-    <div id="content">
-      <div class="loading">Loading dashboard data</div>
+  <!-- Main content (hidden until auth confirmed) -->
+  <main id="mainContent" style="display:none;">
+
+    <div class="page-eyebrow">Dashboard</div>
+    <div class="page-title">Your API Overview</div>
+
+    <!-- API Key card -->
+    <div class="card">
+      <div class="card-label">Your API Key</div>
+      <div class="key-row">
+        <div class="key-display" id="keyDisplay">&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;</div>
+        <div class="key-actions">
+          <button class="btn btn-ghost" id="revealBtn" onclick="toggleKey()">Reveal</button>
+          <button class="btn btn-accent" onclick="copyKey()">Copy</button>
+        </div>
+      </div>
+      <div class="copy-feedback" id="copyFeedback">Copied!</div>
     </div>
-  </div>
+
+    <!-- Usage card -->
+    <div class="card">
+      <div class="card-label">Usage Today</div>
+      <div class="usage-top">
+        <span class="usage-count" id="usageCount">— / 100 calls used today</span>
+        <span class="tier-badge" id="tierBadge">FREE</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="usage-footer">
+        <span>Resets at midnight UTC</span>
+        <a href="/#pricing">Upgrade &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Quick Start card -->
+    <div class="card">
+      <div class="card-label">Quick Start</div>
+      <div class="code-window">
+        <div class="code-tabs">
+          <button class="code-tab active" data-tab="python">Python</button>
+          <button class="code-tab" data-tab="javascript">JavaScript</button>
+          <button class="code-tab" data-tab="curl">cURL</button>
+        </div>
+
+        <div class="code-panel active" id="tab-python">
+<pre><span class="kw">from</span> quantumrand <span class="kw">import</span> QuantumRandClient
+qr = QuantumRandClient(<span class="str">"<span id="key-py">qr_your_key</span>"</span>)
+bits = qr.<span class="fn">bits</span>(<span class="num">256</span>)
+<span class="fn">print</span>(bits)</pre>
+        </div>
+
+        <div class="code-panel" id="tab-javascript">
+<pre><span class="kw">const</span> { QuantumRandClient } = <span class="fn">require</span>(<span class="str">'quantumrand'</span>)
+<span class="kw">const</span> qr = <span class="kw">new</span> <span class="fn">QuantumRandClient</span>({ apiKey: <span class="str">'<span id="key-js">qr_your_key</span>'</span> })
+<span class="kw">const</span> bits = <span class="kw">await</span> qr.<span class="fn">bits</span>(<span class="num">256</span>)
+console.<span class="fn">log</span>(bits)</pre>
+        </div>
+
+        <div class="code-panel" id="tab-curl">
+<pre><span class="fn">curl</span> <span class="flag">-H</span> <span class="str">"X-API-Key: <span id="key-curl">qr_your_key</span>"</span> \
+  https://quantumrand-production.up.railway.app/generate/bits?n=<span class="num">256</span></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
 
   <script>
-    var ADMIN_SECRET = "{{ADMIN_SECRET}}";
+    // ── State ─────────────────────────────────────
+    var fullKey = '';
+    var maskedKey = '';
+    var keyRevealed = false;
 
-    function fmt(n) {
-      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-      return n.toString();
+    var TIER_LIMITS = {
+      free: 100,
+      indie: 1000,
+      startup: 10000,
+      business: 100000
+    };
+
+    // ── Cookie helpers ────────────────────────────
+    function getCookie(name) {
+      var match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return match ? match.pop() : '';
     }
 
-    function renderDashboard(data) {
-      var keys = data.keys;
-      var usage = data.usage;
-      var topUsers = data.top_users;
-      var maxDaily = Math.max.apply(null, usage.daily.map(function(d) { return d.calls; }).concat([1]));
-
-      var html = '';
-
-      // Stat cards
-      html += '<div class="stats-grid">';
-      html += '<div class="stat-card"><div class="stat-label">Total API Keys</div><div class="stat-value">' + keys.total + '</div><div class="stat-sub">' + keys.active + ' active</div></div>';
-      html += '<div class="stat-card"><div class="stat-label">Calls Today</div><div class="stat-value">' + fmt(usage.calls_today) + '</div><div class="stat-sub">' + fmt(usage.calls_this_month) + ' this month</div></div>';
-      html += '<div class="stat-card"><div class="stat-label">Total Bits Generated</div><div class="stat-value">' + fmt(usage.total_bits) + '</div><div class="stat-sub">' + fmt(usage.total_calls) + ' total calls</div></div>';
-      html += '<div class="stat-card"><div class="stat-label">Avg Latency</div><div class="stat-value">' + usage.avg_latency_ms + '<span style="font-size:0.8rem;color:var(--text-muted)">ms</span></div><div class="stat-sub">per request</div></div>';
-      html += '</div>';
-
-      // Chart + Top Users
-      html += '<div class="panels">';
-
-      // Daily chart
-      html += '<div class="panel"><div class="panel-header">API Calls (Last 30 Days)</div><div class="panel-body"><div class="chart-container">';
-      if (usage.daily.length === 0) {
-        html += '<div style="color:var(--text-muted);font-size:0.8rem;margin:auto;">No usage data yet</div>';
-      } else {
-        for (var i = 0; i < usage.daily.length; i++) {
-          var d = usage.daily[i];
-          var pct = Math.max((d.calls / maxDaily) * 100, 1);
-          var label = d.date.substring(5);
-          html += '<div class="chart-bar-wrap">';
-          html += '<div class="chart-bar" style="height:' + pct + '%"><div class="tooltip">' + d.date + ': ' + d.calls + ' calls</div></div>';
-          if (i % 5 === 0 || i === usage.daily.length - 1) {
-            html += '<div class="chart-label">' + label + '</div>';
-          }
-          html += '</div>';
-        }
-      }
-      html += '</div></div></div>';
-
-      // Top users
-      html += '<div class="panel"><div class="panel-header">Top Users</div><div class="panel-body"><div class="user-table">';
-      if (topUsers.length === 0) {
-        html += '<div style="color:var(--text-muted);font-size:0.8rem;padding:1rem 0;">No users yet</div>';
-      } else {
-        for (var j = 0; j < topUsers.length; j++) {
-          var u = topUsers[j];
-          html += '<div class="user-row">';
-          html += '<div class="user-rank">' + (j + 1) + '</div>';
-          html += '<div class="user-name">' + u.name + '</div>';
-          html += '<div class="user-calls">' + fmt(u.calls) + ' calls</div>';
-          html += '<div class="user-bits">' + fmt(u.bits) + ' bits</div>';
-          html += '</div>';
-        }
-      }
-      html += '</div></div></div>';
-      html += '</div>';
-
-      // Endpoint breakdown + Tier distribution
-      html += '<div class="bottom-panels">';
-
-      // Endpoints
-      html += '<div class="panel"><div class="panel-header">Endpoint Breakdown</div><div class="panel-body">';
-      var endpoints = Object.entries(usage.by_endpoint);
-      var maxEndpoint = endpoints.length > 0 ? endpoints[0][1] : 1;
-      if (endpoints.length === 0) {
-        html += '<div style="color:var(--text-muted);font-size:0.8rem;">No endpoint data yet</div>';
-      } else {
-        for (var e = 0; e < endpoints.length; e++) {
-          var ep = endpoints[e];
-          var epPct = (ep[1] / maxEndpoint) * 100;
-          html += '<div class="endpoint-row">';
-          html += '<div class="endpoint-name">' + ep[0] + '</div>';
-          html += '<div class="endpoint-bar-bg"><div class="endpoint-bar-fill" style="width:' + epPct + '%"></div></div>';
-          html += '<div class="endpoint-count">' + fmt(ep[1]) + '</div>';
-          html += '</div>';
-        }
-      }
-      html += '</div></div>';
-
-      // Tiers
-      html += '<div class="panel"><div class="panel-header">Keys by Tier</div><div class="panel-body"><div class="tier-grid">';
-      var tiers = ['free', 'indie', 'startup', 'business'];
-      for (var t = 0; t < tiers.length; t++) {
-        var tier = tiers[t];
-        var count = keys.by_tier[tier] || 0;
-        html += '<div class="tier-card"><div class="tier-name">' + tier + '</div><div class="tier-count">' + count + '</div></div>';
-      }
-      html += '</div></div></div>';
-      html += '</div>';
-
-      document.getElementById('content').innerHTML = html;
+    function deleteCookie(name) {
+      document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     }
 
-    function loadData() {
-      document.getElementById('content').innerHTML = '<div class="loading">Loading dashboard data</div>';
-      fetch('/admin/' + ADMIN_SECRET + '/dashboard/data')
-        .then(function(r) { return r.json(); })
-        .then(function(resp) {
-          if (resp.success) {
-            renderDashboard(resp.data);
-          } else {
-            document.getElementById('content').innerHTML = '<div class="loading" style="color:var(--red)">Error loading data</div>';
-          }
-        })
-        .catch(function(e) {
-          document.getElementById('content').innerHTML = '<div class="loading" style="color:var(--red)">Failed to connect</div>';
+    // ── Build masked key display ──────────────────
+    function buildMask(key) {
+      if (!key) return '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+      var prefix = key.slice(0, 10);
+      return prefix + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+    }
+
+    // ── Populate page from /auth/me response ──────
+    function populate(data) {
+      // Header email
+      var email = data.email || '';
+      document.getElementById('headerEmail').textContent = email;
+
+      // API key
+      fullKey = data.api_key || data.key || '';
+      if (fullKey) {
+        maskedKey = buildMask(fullKey);
+        document.getElementById('keyDisplay').textContent = maskedKey;
+      } else {
+        // No full key available (returning user) — show prefix
+        maskedKey = data.api_key_prefix || 'Key not available';
+        document.getElementById('keyDisplay').textContent = maskedKey;
+        document.getElementById('revealBtn').textContent = 'N/A';
+        document.getElementById('revealBtn').disabled = true;
+      }
+
+      // Inject real key into code snippets
+      var displayKey = fullKey || 'qr_your_key';
+      document.getElementById('key-py').textContent   = displayKey;
+      document.getElementById('key-js').textContent   = displayKey;
+      document.getElementById('key-curl').textContent = displayKey;
+
+      // Usage + tier
+      var usage = data.usage || {};
+      var callsToday  = typeof usage.calls_today === 'number' ? usage.calls_today : (typeof data.calls_today === 'number' ? data.calls_today : 0);
+      var tier        = (data.tier || 'free').toLowerCase();
+      var limit       = usage.calls_limit || TIER_LIMITS[tier] || 100;
+      var pct         = Math.min(100, (callsToday / limit) * 100);
+
+      document.getElementById('usageCount').textContent =
+        callsToday + ' / ' + limit + ' calls used today';
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('tierBadge').textContent    = tier.toUpperCase();
+    }
+
+    // ── Auth check on load ────────────────────────
+    async function init() {
+      var token = getCookie('qr_token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        var resp = await fetch('/auth/me', {
+          credentials: 'include',
+          headers: { 'Authorization': 'Bearer ' + token }
         });
+
+        if (resp.status === 401 || resp.status === 403) {
+          window.location.href = '/login';
+          return;
+        }
+
+        if (!resp.ok) {
+          window.location.href = '/login';
+          return;
+        }
+
+        var json = await resp.json();
+        var data = json.data || json;
+        // Merge locally stored API key (from signup) if server doesn't have it
+        var storedKey = localStorage.getItem('qr_api_key');
+        if (storedKey) data.api_key = storedKey;
+        populate(data);
+
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('mainContent').style.display    = 'block';
+
+      } catch (err) {
+        window.location.href = '/login';
+      }
     }
 
-    loadData();
+    // ── Key reveal / hide ─────────────────────────
+    function toggleKey() {
+      keyRevealed = !keyRevealed;
+      document.getElementById('keyDisplay').textContent =
+        keyRevealed ? fullKey : maskedKey;
+      document.getElementById('revealBtn').textContent =
+        keyRevealed ? 'Hide' : 'Reveal';
+    }
+
+    // ── Copy to clipboard ─────────────────────────
+    function copyKey() {
+      if (!fullKey) return;
+
+      var feedback = document.getElementById('copyFeedback');
+
+      function flash() {
+        feedback.classList.add('show');
+        setTimeout(function() { feedback.classList.remove('show'); }, 1800);
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(fullKey).then(flash);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = fullKey;
+        ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        flash();
+      }
+    }
+
+    // ── Log out ───────────────────────────────────
+    function logout() {
+      deleteCookie('qr_token');
+      window.location.href = '/login';
+    }
+
+    // ── Tab switching ─────────────────────────────
+    document.querySelectorAll('.code-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.code-tab').forEach(function(t) {
+          t.classList.remove('active');
+        });
+        document.querySelectorAll('.code-panel').forEach(function(p) {
+          p.classList.remove('active');
+        });
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── Bootstrap ─────────────────────────────────
+    init();
   </script>
 
 </body>
