@@ -80,8 +80,9 @@ def finance_txid(
     txid = f"QTX-{timestamp}-{entropy_hex[:32]}"
     now = datetime.now(timezone.utc).isoformat()
 
-    from app.cache import pool as entropy_pool
-    pool_healthy = entropy_pool.healthy() if entropy_pool else True
+    from app.cache import pool_stats
+    stats = pool_stats()
+    pool_healthy = stats.get("size", 0) >= stats.get("threshold", 0)
 
     _log_and_update(key_record["key"], "/finance/txid", 128, elapsed_ms, backend=source)
     return {
