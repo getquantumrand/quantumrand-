@@ -608,6 +608,14 @@ init_pool(engine)
 # V1 API router — all versioned endpoints available at both /path and /v1/path
 v1 = APIRouter(prefix="/v1", include_in_schema=False)
 
+# Finance router — quantum financial security endpoints
+from app.finance import router as finance_router, engine as _fin_engine
+import app.finance as _finance_mod
+_finance_mod.engine = engine
+app.include_router(finance_router)
+v1_finance = APIRouter(prefix="/v1")
+v1_finance.include_router(finance_router)
+
 # Mount static files
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():
@@ -898,6 +906,11 @@ def api_info():
                 "GET  /keys/me       - Get your key info (auth required)",
                 "GET  /keys/stats    - Get usage stats (auth required)",
                 "POST /keys/revoke   - Revoke your API key (auth required)",
+                "POST /finance/txid  - Generate quantum transaction ID (auth required)",
+                "POST /finance/otp   - Generate one-time payment token (auth required)",
+                "POST /finance/nonce - Generate replay-prevention nonce (auth required)",
+                "POST /finance/keypair - Generate quantum-seeded Ed25519 keypair (auth required)",
+                "POST /finance/audit-sign - Sign payload with quantum HMAC-SHA256 (auth required)",
             ],
         },
     }
@@ -1429,3 +1442,4 @@ v1.add_api_route("/generate/key", generate_key, methods=["POST"])
 v1.add_api_route("/generate/batch", generate_batch, methods=["POST"])
 v1.add_api_route("/generate/webhook", generate_webhook, methods=["POST"])
 app.include_router(v1)
+app.include_router(v1_finance)
