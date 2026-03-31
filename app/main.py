@@ -181,24 +181,24 @@ Quantum bits are placed in superposition using Hadamard gates. When measured, ph
 
 ```bash
 # 1. Create a free API key
-curl -X POST https://quantumrand-production.up.railway.app/keys/create \
+curl -X POST https://quantumrand.dev/keys/create \
   -H "Content-Type: application/json" \
   -d '{"name": "My App", "email": "dev@example.com"}'
 # → {"success":true,"data":{"key":"qr_a1b2c3...","tier":"free",...}}
 
 # 2. Generate 64 quantum random bits
 curl -H "X-API-Key: qr_YOUR_KEY" \
-  "https://quantumrand-production.up.railway.app/generate/bits?n=64"
+  "https://quantumrand.dev/generate/bits?n=64"
 # → {"success":true,"data":{"raw_bits":"1011010011100101...","num_bits":64,"hex":"b4e5..."}}
 
 # 3. Generate a random integer between 1 and 1000
 curl -H "X-API-Key: qr_YOUR_KEY" \
-  "https://quantumrand-production.up.railway.app/generate/integer?min=1&max=1000"
+  "https://quantumrand.dev/generate/integer?min=1&max=1000"
 # → {"success":true,"data":{"value":742,"min":1,"max":1000}}
 
 # 4. Generate a 256-bit cryptographic key
 curl -X POST -H "X-API-Key: qr_YOUR_KEY" \
-  "https://quantumrand-production.up.railway.app/generate/key?bits=256"
+  "https://quantumrand.dev/generate/key?bits=256"
 # → {"success":true,"data":{"key_hex":"a3f9c2e1b4d87f3c...","bits":256}}
 ```
 

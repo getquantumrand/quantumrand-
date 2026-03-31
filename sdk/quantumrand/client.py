@@ -46,7 +46,7 @@ class QuantumRandClient:
         qr = QuantumRandClient("qr_key", hmac_secret="your_secret")
     """
 
-    DEFAULT_BASE_URL = "https://quantumrand-production.up.railway.app"
+    DEFAULT_BASE_URL = "https://quantumrand.dev"
 
     def __init__(
         self,

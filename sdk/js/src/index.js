@@ -21,7 +21,7 @@ class QuantumRandClient {
   constructor({ apiKey, baseUrl, backend = "origin_cloud", timeout = 30000, hmacSecret } = {}) {
     if (!apiKey) throw new Error("apiKey is required");
     this.apiKey = apiKey;
-    this.baseUrl = (baseUrl || "https://quantumrand-production.up.railway.app").replace(/\/+$/, "");
+    this.baseUrl = (baseUrl || "https://quantumrand.dev").replace(/\/+$/, "");
     this.backend = backend;
     this.timeout = timeout;
     this.hmacSecret = hmacSecret || null;
