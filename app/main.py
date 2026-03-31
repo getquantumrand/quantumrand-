@@ -126,6 +126,7 @@ async def lifespan(app: FastAPI):
             logger.info("Embedded quantum simulator started")
         except Exception as e:
             logger.warning(f"Could not start embedded simulator: {e}")
+    prefill_pool()
     start_pool()
     _schedule_purge()
     yield
@@ -602,7 +603,7 @@ app.add_middleware(
 engine = QuantumEngine()
 
 # Initialize entropy pool
-from app.cache import init_pool, start_pool, pool_stats
+from app.cache import init_pool, start_pool, prefill_pool, pool_stats
 init_pool(engine)
 
 # V1 API router — all versioned endpoints available at both /path and /v1/path
@@ -965,6 +966,26 @@ def health():
             },
         },
     )
+
+
+@app.get("/health/pool", summary="Entropy Pool Health",
+         description="Detailed entropy pool health status. Returns pool depth, health status, entropy source, and refill metrics.")
+def health_pool():
+    from app.config import IBM_QUANTUM_ENABLED
+    stats = pool_stats()
+    ibm_status = "connected" if IBM_QUANTUM_ENABLED else "unavailable"
+    return {
+        "success": True,
+        "data": {
+            "pool_depth": stats["pool_size_bits"],
+            "pool_target": stats["pool_target"],
+            "pool_healthy": stats["pool_healthy"],
+            "entropy_source": stats["entropy_source"],
+            "last_refill": stats["last_refill_at"],
+            "refill_count": stats["refill_count"],
+            "ibm_queue_status": ibm_status,
+        },
+    }
 
 
 @app.get("/backends", summary="List Backends",

@@ -179,7 +179,8 @@
 
         var pool = d.entropy_pool || {};
         var poolOk = pool.pool_healthy !== false;
-        setStatus('statusPool', poolOk, poolOk ? 'operational (' + pool.pool_size_bits + ' bits)' : 'filling...');
+        var poolLabel = poolOk ? 'operational (' + pool.pool_size_bits + ' bits, ' + (pool.entropy_source || 'quantum') + ')' : 'filling...';
+        setStatus('statusPool', poolOk, poolLabel);
 
         var ibm = d.ibm_quantum || 'not_configured';
         setStatus('statusIbm', ibm === 'configured', ibm === 'configured' ? 'connected' : 'not configured');

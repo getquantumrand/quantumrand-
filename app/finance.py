@@ -81,8 +81,7 @@ def finance_txid(
     now = datetime.now(timezone.utc).isoformat()
 
     from app.cache import pool_stats
-    stats = pool_stats()
-    pool_healthy = stats.get("size", 0) >= stats.get("threshold", 0)
+    pool_healthy = pool_stats().get("pool_healthy", True)
 
     _log_and_update(key_record["key"], "/finance/txid", 128, elapsed_ms, backend=source)
     return {
