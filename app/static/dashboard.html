@@ -414,6 +414,96 @@
     .quantum-badge.amber { background: rgba(255, 183, 77, 0.15); color: #ffb74d; border: 1px solid rgba(255, 183, 77, 0.3); }
     .quantum-badge.red { background: rgba(224, 108, 117, 0.15); color: #e06c75; border: 1px solid rgba(224, 108, 117, 0.3); }
 
+    /* ── Plan Card ────────────────────────────── */
+    .plan-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .plan-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .plan-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .plan-price {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .plan-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .plan-option {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .plan-option:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .plan-option.current {
+      border-color: var(--success);
+      cursor: default;
+    }
+
+    .plan-option .plan-tier {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .plan-option .plan-cost {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .plan-option .plan-cost span {
+      font-size: 0.68rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .plan-option .plan-detail {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    @media (max-width: 600px) {
+      .plan-grid { grid-template-columns: 1fr; }
+      .plan-row { flex-direction: column; align-items: stretch; }
+    }
+
     /* ── Compliance Banner ────────────────────── */
     .compliance-banner {
       background: var(--surface-2);
@@ -601,6 +691,40 @@
       </div>
     </div>
 
+    <!-- Plan card -->
+    <div class="card" id="planCard">
+      <div class="card-label">Your Plan</div>
+      <div class="plan-row">
+        <div class="plan-info">
+          <span class="plan-name" id="planName">Free</span>
+          <span class="tier-badge" id="planBadge">FREE</span>
+          <span class="plan-price" id="planPrice">$0/mo</span>
+        </div>
+        <div class="plan-actions" id="planActions">
+          <button class="btn btn-accent" id="upgradeBtn" onclick="showUpgradeOptions()">Upgrade</button>
+          <button class="btn btn-ghost" id="manageBtn" onclick="manageBilling()" style="display:none">Manage Billing</button>
+          <button class="btn btn-outline" id="cancelBtn" onclick="cancelPlan()" style="display:none">Cancel Plan</button>
+        </div>
+      </div>
+      <div class="plan-grid" id="planGrid" style="display:none">
+        <div class="plan-option" data-tier="indie" onclick="upgradeTo('indie')">
+          <div class="plan-tier">Indie</div>
+          <div class="plan-cost">$9<span>/mo</span></div>
+          <div class="plan-detail">1,000 calls/day</div>
+        </div>
+        <div class="plan-option" data-tier="startup" onclick="upgradeTo('startup')">
+          <div class="plan-tier">Startup</div>
+          <div class="plan-cost">$49<span>/mo</span></div>
+          <div class="plan-detail">10,000 calls/day</div>
+        </div>
+        <div class="plan-option" data-tier="business" onclick="upgradeTo('business')">
+          <div class="plan-tier">Business</div>
+          <div class="plan-cost">$299<span>/mo</span></div>
+          <div class="plan-detail">100,000 calls/day</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Start card -->
     <div class="card">
       <div class="card-label">Quick Start</div>
@@ -776,6 +900,9 @@ console.<span class="fn">log</span>(bits)</pre>
         callsToday + ' / ' + limit + ' calls used today';
       document.getElementById('progressFill').style.width = pct + '%';
       document.getElementById('tierBadge').textContent    = tier.toUpperCase();
+
+      // Plan card
+      populatePlan(data);
     }
 
     // ── Auth check on load ────────────────────────
@@ -874,6 +1001,93 @@ console.<span class="fn">log</span>(bits)</pre>
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
       });
     });
+
+    // ── Billing ────────────────────────────────────────
+    var PLAN_PRICES = { free: '$0/mo', indie: '$9/mo', startup: '$49/mo', business: '$299/mo' };
+    var currentTier = 'free';
+
+    function populatePlan(data) {
+      currentTier = (data.tier || 'free').toLowerCase();
+      document.getElementById('planName').textContent = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
+      document.getElementById('planBadge').textContent = currentTier.toUpperCase();
+      document.getElementById('planPrice').textContent = PLAN_PRICES[currentTier] || '$0/mo';
+
+      // Show/hide buttons based on tier
+      if (currentTier === 'free') {
+        document.getElementById('upgradeBtn').style.display = '';
+        document.getElementById('manageBtn').style.display = 'none';
+        document.getElementById('cancelBtn').style.display = 'none';
+      } else {
+        document.getElementById('upgradeBtn').textContent = 'Change Plan';
+        document.getElementById('manageBtn').style.display = '';
+        document.getElementById('cancelBtn').style.display = '';
+      }
+
+      // Mark current tier in grid
+      document.querySelectorAll('.plan-option').forEach(function(el) {
+        el.classList.toggle('current', el.dataset.tier === currentTier);
+      });
+    }
+
+    function showUpgradeOptions() {
+      var grid = document.getElementById('planGrid');
+      grid.style.display = grid.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    async function upgradeTo(tier) {
+      if (tier === currentTier) return;
+      try {
+        var resp = await fetch('/billing/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ tier: tier })
+        });
+        var json = await resp.json();
+        if (json.success && json.data && json.data.url) {
+          window.location.href = json.data.url;
+        } else {
+          alert(json.detail || json.error || 'Could not start checkout');
+        }
+      } catch (e) {
+        alert('Connection error. Please try again.');
+      }
+    }
+
+    async function manageBilling() {
+      try {
+        var resp = await fetch('/billing/portal', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        var json = await resp.json();
+        if (json.success && json.data && json.data.url) {
+          window.location.href = json.data.url;
+        } else {
+          alert(json.detail || json.error || 'Could not open billing portal');
+        }
+      } catch (e) {
+        alert('Connection error. Please try again.');
+      }
+    }
+
+    async function cancelPlan() {
+      if (!confirm('Cancel your ' + currentTier + ' plan? You will be downgraded to the free tier immediately.')) return;
+      try {
+        var resp = await fetch('/billing/cancel', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        var json = await resp.json();
+        if (json.success) {
+          alert('Plan cancelled. You are now on the free tier.');
+          window.location.reload();
+        } else {
+          alert(json.detail || json.error || 'Could not cancel plan');
+        }
+      } catch (e) {
+        alert('Connection error. Please try again.');
+      }
+    }
 
     // ── Audit Log State ──────────────────────────────
     var auditPage = 0;

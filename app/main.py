@@ -619,6 +619,10 @@ app.include_router(finance_router)
 v1_finance = APIRouter(prefix="/v1")
 v1_finance.include_router(finance_router)
 
+# Billing router — Stripe subscription management
+from app.billing import router as billing_router
+app.include_router(billing_router)
+
 # Mount static files
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():
@@ -807,6 +811,8 @@ def auth_me(request: Request):
                 "total_calls": stats.get("total_calls", 0),
                 "total_bits": stats.get("total_bits", 0),
             },
+            "has_billing": bool(user.get("stripe_customer_id")),
+            "subscription_id": user.get("stripe_subscription_id", ""),
         },
     }
 

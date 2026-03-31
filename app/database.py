@@ -481,6 +481,37 @@ def get_user_by_id(user_id: str) -> dict | None:
     return doc.to_dict()
 
 
+def update_user_stripe(user_id: str, stripe_customer_id: str, stripe_subscription_id: str = ""):
+    """Store Stripe customer/subscription IDs on user record."""
+    update = {"stripe_customer_id": stripe_customer_id}
+    if stripe_subscription_id:
+        update["stripe_subscription_id"] = stripe_subscription_id
+    _users_col.document(user_id).update(update)
+
+
+def update_user_tier(user_id: str, tier: str):
+    """Update user tier and their API key tier."""
+    user = get_user_by_id(user_id)
+    if not user:
+        return
+    _users_col.document(user_id).update({"tier": tier})
+    # Also update the API key tier so rate limits take effect
+    key_hash = user.get("api_key_hash", "")
+    if key_hash:
+        try:
+            _keys_col.document(key_hash).update({"tier": tier})
+        except Exception:
+            pass
+
+
+def get_user_by_stripe_customer(customer_id: str) -> dict | None:
+    """Look up a user by Stripe customer ID."""
+    docs = list(_users_col.where("stripe_customer_id", "==", customer_id).limit(1).stream())
+    if not docs:
+        return None
+    return docs[0].to_dict()
+
+
 def migrate_plaintext_keys() -> int:
     """One-time migration: rehash any legacy keys stored with plaintext doc IDs.
     Returns count of keys migrated.

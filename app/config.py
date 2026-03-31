@@ -43,3 +43,14 @@ DEMO_RATE_LIMIT = int(os.getenv("DEMO_RATE_LIMIT", "10"))  # requests per minute
 # Request timeout for quantum circuit execution (seconds)
 CIRCUIT_TIMEOUT = int(os.getenv("CIRCUIT_TIMEOUT", "30"))
 JWT_SECRET = os.getenv("JWT_SECRET", secrets.token_hex(32))
+
+# Stripe billing
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_ENABLED = bool(STRIPE_SECRET_KEY)
+
+# Stripe Price IDs (set after creating products in Stripe dashboard)
+STRIPE_PRICE_INDIE = os.getenv("STRIPE_PRICE_INDIE", "")
+STRIPE_PRICE_STARTUP = os.getenv("STRIPE_PRICE_STARTUP", "")
+STRIPE_PRICE_BUSINESS = os.getenv("STRIPE_PRICE_BUSINESS", "")
