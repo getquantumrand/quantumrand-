@@ -350,6 +350,70 @@ def get_usage_logs(api_key: str) -> list[dict]:
     return logs
 
 
+def get_audit_logs(api_key: str, endpoint: str = "", date_from: str = "", date_to: str = "", limit: int = 100, offset: int = 0) -> list[dict]:
+    """Get paginated audit logs for an API key with optional filters."""
+    docs = _usage_col.where("api_key", "==", api_key).stream()
+    logs = []
+    for doc in docs:
+        d = doc.to_dict()
+        d["log_id"] = doc.id
+        ts = d.get("timestamp", "")
+        # Apply filters
+        if endpoint and d.get("endpoint", "") != endpoint:
+            continue
+        if date_from and ts < date_from:
+            continue
+        if date_to and ts > date_to + "T23:59:59":
+            continue
+        logs.append(d)
+    # Sort newest first
+    logs.sort(key=lambda d: d.get("timestamp", ""), reverse=True)
+    return logs[offset:offset + limit]
+
+
+def get_audit_summary(api_key: str) -> dict:
+    """Aggregate audit stats for dashboard header."""
+    from collections import Counter
+    docs = _usage_col.where("api_key", "==", api_key).stream()
+
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    month_start = now.strftime("%Y-%m-01")
+
+    calls_today = 0
+    calls_month = 0
+    total_ms = 0.0
+    total_calls = 0
+    quantum_calls = 0
+    endpoint_counts = Counter()
+
+    for doc in docs:
+        d = doc.to_dict()
+        ts = d.get("timestamp", "")
+        total_calls += 1
+        total_ms += d.get("elapsed_ms", 0)
+        endpoint_counts[d.get("endpoint", "")] += 1
+        backend = d.get("backend", "")
+        if backend and "fallback" not in backend:
+            quantum_calls += 1
+        if ts >= today:
+            calls_today += 1
+        if ts >= month_start:
+            calls_month += 1
+
+    avg_ms = round(total_ms / total_calls, 2) if total_calls else 0
+    quantum_pct = round((quantum_calls / total_calls) * 100, 1) if total_calls else 100.0
+    most_used = endpoint_counts.most_common(1)[0][0] if endpoint_counts else ""
+
+    return {
+        "total_calls_today": calls_today,
+        "total_calls_this_month": calls_month,
+        "most_used_endpoint": most_used,
+        "avg_response_time_ms": avg_ms,
+        "quantum_percentage": quantum_pct,
+    }
+
+
 def check_connection() -> bool:
     try:
         # Quick read to verify Firestore is reachable

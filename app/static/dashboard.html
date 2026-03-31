@@ -368,6 +368,188 @@
 
       .key-actions .btn { flex: 1; text-align: center; }
     }
+
+    /* ── Audit Stats Row ──────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.66rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 0.3rem;
+    }
+
+    .quantum-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .quantum-badge.green { background: rgba(76, 175, 80, 0.15); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.3); }
+    .quantum-badge.amber { background: rgba(255, 183, 77, 0.15); color: #ffb74d; border: 1px solid rgba(255, 183, 77, 0.3); }
+    .quantum-badge.red { background: rgba(224, 108, 117, 0.15); color: #e06c75; border: 1px solid rgba(224, 108, 117, 0.3); }
+
+    /* ── Compliance Banner ────────────────────── */
+    .compliance-banner {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.25rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.7;
+    }
+
+    .compliance-banner strong { color: var(--text); }
+
+    /* ── Audit Filter Bar ─────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .filter-bar select,
+    .filter-bar input[type="date"] {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.45rem 0.7rem;
+      outline: none;
+    }
+
+    .filter-bar select:focus,
+    .filter-bar input[type="date"]:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── Audit Table ──────────────────────────── */
+    .audit-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+    }
+
+    .audit-table th {
+      text-align: left;
+      padding: 0.7rem 1rem;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .audit-table td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .audit-table tr:last-child td { border-bottom: none; }
+
+    .audit-table tr:hover td { background: rgba(79, 142, 247, 0.04); }
+
+    .source-badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.64rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .source-badge.quantum { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+    .source-badge.hybrid { background: rgba(255, 183, 77, 0.15); color: #ffb74d; }
+    .source-badge.fallback { background: rgba(224, 108, 117, 0.15); color: #e06c75; }
+
+    .status-ok { color: #4caf50; }
+    .status-err { color: #e06c75; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+      font-size: 0.73rem;
+      color: var(--text-muted);
+    }
+
+    .pagination button {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.73rem;
+      padding: 0.35rem 0.9rem;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .pagination button:hover { color: var(--text); border-color: var(--text-muted); }
+    .pagination button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .auto-refresh-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.73rem;
+      color: var(--text-muted);
+    }
+
+    .auto-refresh-toggle input { accent-color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .filter-bar { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
@@ -447,6 +629,82 @@ console.<span class="fn">log</span>(bits)</pre>
 <pre><span class="fn">curl</span> <span class="flag">-H</span> <span class="str">"X-API-Key: <span id="key-curl">qr_your_key</span>"</span> \
   https://quantumrand.dev/generate/bits?n=<span class="num">256</span></pre>
         </div>
+      </div>
+    </div>
+
+    <!-- Audit Stats -->
+    <div class="stats-row" id="auditStats">
+      <div class="stat-card">
+        <div class="stat-value" id="statToday">—</div>
+        <div class="stat-label">Calls Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statMonth">—</div>
+        <div class="stat-label">This Month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statQuantum">—</div>
+        <div class="stat-label">Quantum %</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statLatency">—</div>
+        <div class="stat-label">Avg Latency</div>
+      </div>
+    </div>
+
+    <!-- Audit Log -->
+    <div class="card">
+      <div class="card-label">Audit Log</div>
+
+      <div class="compliance-banner">
+        <strong>Compliance Ready.</strong> All quantum operations are logged with immutable timestamps. Export your audit trail for SOC 2, PCI-DSS, or internal compliance review.
+      </div>
+
+      <div class="filter-bar">
+        <select id="filterEndpoint">
+          <option value="">All endpoints</option>
+          <option value="/finance/txid">txid</option>
+          <option value="/finance/otp">otp</option>
+          <option value="/finance/nonce">nonce</option>
+          <option value="/finance/keypair">keypair</option>
+          <option value="/finance/audit-sign">audit-sign</option>
+          <option value="/generate/bits">bits</option>
+          <option value="/generate/hex">hex</option>
+          <option value="/generate/integer">integer</option>
+          <option value="/generate/key">key</option>
+        </select>
+        <input type="date" id="filterFrom" />
+        <input type="date" id="filterTo" />
+        <button class="btn btn-ghost" onclick="loadAuditLogs()">Search</button>
+        <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
+        <button class="btn btn-accent" onclick="exportCSV()">Export CSV</button>
+        <div class="auto-refresh-toggle">
+          <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()" />
+          <label for="autoRefresh">Auto-refresh</label>
+        </div>
+      </div>
+
+      <div class="audit-table-wrap">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Endpoint</th>
+              <th>Status</th>
+              <th>Source</th>
+              <th>Latency</th>
+            </tr>
+          </thead>
+          <tbody id="auditBody">
+            <tr><td colspan="5" class="empty-state">Loading audit logs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prevPage" onclick="prevPage()" disabled>&larr; Prev</button>
+        <span id="pageInfo">Page 1</span>
+        <button id="nextPage" onclick="nextPage()">Next &rarr;</button>
       </div>
     </div>
 
@@ -554,6 +812,10 @@ console.<span class="fn">log</span>(bits)</pre>
         document.getElementById('loadingOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display    = 'block';
 
+        // Load audit data
+        loadAuditSummary();
+        fetchAuditPage();
+
       } catch (err) {
         window.location.href = '/login';
       }
@@ -612,6 +874,167 @@ console.<span class="fn">log</span>(bits)</pre>
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
       });
     });
+
+    // ── Audit Log State ──────────────────────────────
+    var auditPage = 0;
+    var auditPageSize = 25;
+    var auditRefreshTimer = null;
+
+    function getToken() {
+      return getCookie('qr_token');
+    }
+
+    function apiHeaders() {
+      var stored = localStorage.getItem('qr_api_key');
+      var h = { 'Authorization': 'Bearer ' + getToken() };
+      if (stored) h['X-API-Key'] = stored;
+      return h;
+    }
+
+    function getSourceClass(src) {
+      if (!src) return 'quantum';
+      if (src.indexOf('fallback') !== -1) return 'fallback';
+      if (src.indexOf('hybrid') !== -1) return 'hybrid';
+      return 'quantum';
+    }
+
+    function getSourceLabel(src) {
+      if (!src) return 'quantum';
+      if (src.indexOf('fallback') !== -1) return 'fallback';
+      if (src.indexOf('hybrid') !== -1) return 'hybrid';
+      return 'quantum';
+    }
+
+    function formatTs(ts) {
+      if (!ts) return '—';
+      var d = new Date(ts);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+             d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    }
+
+    async function loadAuditSummary() {
+      try {
+        var resp = await fetch('/audit/summary', { headers: apiHeaders() });
+        if (!resp.ok) return;
+        var json = await resp.json();
+        var d = json.data || {};
+        document.getElementById('statToday').textContent = d.total_calls_today || 0;
+        document.getElementById('statMonth').textContent = d.total_calls_this_month || 0;
+
+        var pct = d.quantum_percentage || 0;
+        var pctEl = document.getElementById('statQuantum');
+        pctEl.innerHTML = '<span class="quantum-badge ' +
+          (pct >= 90 ? 'green' : pct >= 70 ? 'amber' : 'red') + '">' +
+          pct + '%</span>';
+
+        document.getElementById('statLatency').textContent =
+          (d.avg_response_time_ms || 0) + 'ms';
+      } catch (e) {}
+    }
+
+    function buildFilterQuery() {
+      var ep = document.getElementById('filterEndpoint').value;
+      var from = document.getElementById('filterFrom').value;
+      var to = document.getElementById('filterTo').value;
+      var params = [];
+      if (ep) params.push('endpoint=' + encodeURIComponent(ep));
+      if (from) params.push('date_from=' + from);
+      if (to) params.push('date_to=' + to);
+      params.push('limit=' + auditPageSize);
+      params.push('offset=' + (auditPage * auditPageSize));
+      return params.join('&');
+    }
+
+    async function loadAuditLogs() {
+      auditPage = 0;
+      await fetchAuditPage();
+    }
+
+    async function fetchAuditPage() {
+      var body = document.getElementById('auditBody');
+      try {
+        var resp = await fetch('/audit/logs?' + buildFilterQuery(), { headers: apiHeaders() });
+        if (!resp.ok) {
+          body.innerHTML = '<tr><td colspan="5" class="empty-state">Failed to load logs.</td></tr>';
+          return;
+        }
+        var json = await resp.json();
+        var logs = (json.data || {}).logs || [];
+
+        if (logs.length === 0) {
+          body.innerHTML = '<tr><td colspan="5" class="empty-state">No logs match your filters. Try adjusting the date range or endpoint filter.</td></tr>';
+          updatePagination(0);
+          return;
+        }
+
+        var html = '';
+        for (var i = 0; i < logs.length; i++) {
+          var log = logs[i];
+          var srcClass = getSourceClass(log.entropy_source);
+          var srcLabel = getSourceLabel(log.entropy_source);
+          html += '<tr>' +
+            '<td>' + formatTs(log.created_at) + '</td>' +
+            '<td>' + (log.endpoint || '—') + '</td>' +
+            '<td><span class="status-ok">&#10003;</span></td>' +
+            '<td><span class="source-badge ' + srcClass + '">' + srcLabel + '</span></td>' +
+            '<td>' + (log.response_time_ms || 0).toFixed(1) + 'ms</td>' +
+            '</tr>';
+        }
+        body.innerHTML = html;
+        updatePagination(logs.length);
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="5" class="empty-state">Error loading logs.</td></tr>';
+      }
+    }
+
+    function updatePagination(count) {
+      document.getElementById('prevPage').disabled = auditPage === 0;
+      document.getElementById('nextPage').disabled = count < auditPageSize;
+      document.getElementById('pageInfo').textContent = 'Page ' + (auditPage + 1);
+    }
+
+    function nextPage() { auditPage++; fetchAuditPage(); }
+    function prevPage() { if (auditPage > 0) { auditPage--; fetchAuditPage(); } }
+
+    function resetFilters() {
+      document.getElementById('filterEndpoint').value = '';
+      document.getElementById('filterFrom').value = '';
+      document.getElementById('filterTo').value = '';
+      auditPage = 0;
+      fetchAuditPage();
+    }
+
+    function exportCSV() {
+      var ep = document.getElementById('filterEndpoint').value;
+      var from = document.getElementById('filterFrom').value;
+      var to = document.getElementById('filterTo').value;
+      var params = [];
+      if (ep) params.push('endpoint=' + encodeURIComponent(ep));
+      if (from) params.push('date_from=' + from);
+      if (to) params.push('date_to=' + to);
+      var url = '/audit/export' + (params.length ? '?' + params.join('&') : '');
+      // Use a hidden link with API key header via fetch + blob
+      fetch(url, { headers: apiHeaders() })
+        .then(function(r) { return r.blob(); })
+        .then(function(blob) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'quantumrand-audit.csv';
+          a.click();
+        });
+    }
+
+    function toggleAutoRefresh() {
+      if (document.getElementById('autoRefresh').checked) {
+        auditRefreshTimer = setInterval(function() {
+          fetchAuditPage();
+          loadAuditSummary();
+        }, 30000);
+      } else {
+        clearInterval(auditRefreshTimer);
+        auditRefreshTimer = null;
+      }
+    }
 
     // ── Bootstrap ─────────────────────────────────
     init();

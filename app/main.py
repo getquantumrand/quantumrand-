@@ -43,6 +43,8 @@ from app.database import (
     disable_signing,
     migrate_plaintext_keys,
     purge_old_usage_logs,
+    get_audit_logs,
+    get_audit_summary,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -1188,6 +1190,70 @@ def admin_migrate_keys(secret: str):
     return {"success": True, "data": {"migrated": count, "message": f"Migrated {count} keys to hashed storage"}}
 
 
+# --- Audit log endpoints ---
+
+@app.get("/audit/logs", summary="Audit Logs",
+         description="Paginated audit log for authenticated user. Filter by endpoint, date range. Max 1000 entries.")
+def audit_logs(
+    endpoint: str = Query(default="", description="Filter by endpoint path"),
+    date_from: str = Query(default="", description="Start date (YYYY-MM-DD)"),
+    date_to: str = Query(default="", description="End date (YYYY-MM-DD)"),
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    key_record: dict = Depends(require_api_key),
+):
+    logs = get_audit_logs(key_record["key"], endpoint=endpoint, date_from=date_from, date_to=date_to, limit=limit, offset=offset)
+    entries = []
+    for log in logs:
+        entries.append({
+            "log_id": log.get("log_id", ""),
+            "endpoint": log.get("endpoint", ""),
+            "status_code": 200,
+            "entropy_source": log.get("backend", "quantum"),
+            "response_time_ms": log.get("elapsed_ms", 0),
+            "bits_requested": log.get("bits_requested", 0),
+            "created_at": log.get("timestamp", ""),
+        })
+    return {"success": True, "data": {"logs": entries, "count": len(entries), "offset": offset, "limit": limit}}
+
+
+@app.get("/audit/export", summary="Export Audit Logs",
+         description="Download audit logs as CSV. Same filters as /audit/logs.")
+def audit_export(
+    endpoint: str = Query(default=""),
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    key_record: dict = Depends(require_api_key),
+):
+    import io
+    import csv
+    logs = get_audit_logs(key_record["key"], endpoint=endpoint, date_from=date_from, date_to=date_to, limit=1000)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["log_id", "timestamp", "endpoint", "status_code", "entropy_source", "response_time_ms", "bits_requested"])
+    for log in logs:
+        writer.writerow([
+            log.get("log_id", ""),
+            log.get("timestamp", ""),
+            log.get("endpoint", ""),
+            200,
+            log.get("backend", "quantum"),
+            log.get("elapsed_ms", 0),
+            log.get("bits_requested", 0),
+        ])
+    buf.seek(0)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    filename = f"quantumrand-audit-{today}.csv"
+    return StreamingResponse(buf, media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+
+@app.get("/audit/summary", summary="Audit Summary",
+         description="Aggregate usage stats for dashboard header.")
+def audit_summary(key_record: dict = Depends(require_api_key)):
+    summary = get_audit_summary(key_record["key"])
+    return {"success": True, "data": summary}
+
+
 # --- Authenticated generate endpoints ---
 
 def _log_and_update(api_key: str, endpoint: str, bits: int, elapsed_ms: float, backend: str = ""):
@@ -1462,5 +1528,8 @@ v1.add_api_route("/generate/integer", generate_integer, methods=["GET"])
 v1.add_api_route("/generate/key", generate_key, methods=["POST"])
 v1.add_api_route("/generate/batch", generate_batch, methods=["POST"])
 v1.add_api_route("/generate/webhook", generate_webhook, methods=["POST"])
+v1.add_api_route("/audit/logs", audit_logs, methods=["GET"])
+v1.add_api_route("/audit/export", audit_export, methods=["GET"])
+v1.add_api_route("/audit/summary", audit_summary, methods=["GET"])
 app.include_router(v1)
 app.include_router(v1_finance)
