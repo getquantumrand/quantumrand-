@@ -4,88 +4,409 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy — QuantumRand</title>
+  <meta name="description" content="Privacy Policy for the QuantumRand API platform. Learn how we handle your data.">
+  <meta property="og:title" content="Privacy Policy — QuantumRand">
+  <meta property="og:description" content="Privacy Policy for the QuantumRand API platform. Learn how we handle your data.">
+  <meta property="og:url" content="https://quantumrand.dev/privacy">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QuantumRand">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Privacy Policy — QuantumRand">
+  <meta name="twitter:description" content="Privacy Policy for the QuantumRand API platform. Learn how we handle your data.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root { --bg: #0a0a0a; --surface: #111111; --border: #222222; --text: #e0e0e0; --text-muted: #888888; --accent: #4f8ef7; }
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #1a1a1a;
+      --border: #222222;
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79,142,247,0.15);
+      --accent-hover: #6ba0ff;
+      --radius: 10px;
+    }
+    html { scroll-behavior: smooth; }
     body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); line-height: 1.8; -webkit-font-smoothing: antialiased; }
     a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 720px; margin: 0 auto; padding: 4rem 2rem; }
-    h1 { color: var(--accent); font-size: 1.8rem; margin-bottom: 0.5rem; }
-    .updated { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 2rem; }
-    h2 { color: #fff; font-size: 1.1rem; margin: 2rem 0 0.75rem; }
-    p, li { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
-    ul { padding-left: 1.5rem; }
-    .back { display: inline-block; margin-bottom: 2rem; font-size: 0.85rem; }
-    footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); }
+    a:hover { text-decoration: underline; color: var(--accent-hover); }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+    }
+    .logo span { color: var(--accent); }
+    .logo:hover { text-decoration: none; }
+    nav { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn:hover { text-decoration: none; }
+    .btn-outline {
+      color: var(--text);
+      border: 1px solid var(--border);
+      background: transparent;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-primary {
+      background: #00ff41;
+      color: #000;
+    }
+    .btn-primary:hover { background: #00cc33; }
+
+    /* Container */
+    .container { max-width: 800px; margin: 0 auto; padding: 4rem 2rem; }
+
+    /* Title area */
+    .title-area { margin-bottom: 2.5rem; }
+    .title-area h1 { color: #fff; font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .title-area .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .title-area .updated { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.3rem; }
+    .title-area .entity { color: var(--text-muted); font-size: 0.8rem; }
+
+    /* Table of Contents */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      margin-bottom: 3rem;
+    }
+    .toc-title { color: #00ff41; font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem 2rem;
+    }
+    .toc a { font-size: 0.8rem; color: var(--text-muted); }
+    .toc a:hover { color: var(--accent); }
+
+    /* Sections */
+    .section { margin-bottom: 2.5rem; }
+    .section h2 { color: #00ff41; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .section h3 { color: #ffb300; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1rem; }
+    .section p, .section li { color: var(--text); font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .section ul { padding-left: 1.5rem; list-style: disc; }
+    .section ul li { margin-bottom: 0.4rem; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; margin: 1rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th { background: var(--surface-2); color: #00ff41; text-align: left; padding: 0.75rem 1rem; font-size: 0.8rem; font-weight: 600; border-bottom: 2px solid var(--border); }
+    td { padding: 0.75rem 1rem; font-size: 0.8rem; color: var(--text); border-bottom: 1px solid var(--border); }
+    tr:hover { background: rgba(79,142,247,0.05); }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .toc-grid { grid-template-columns: 1fr; }
+      header { padding: 0.75rem 1rem; }
+      .container { padding: 2rem 1rem; }
+      .title-area h1 { font-size: 1.5rem; }
+      nav { flex-wrap: wrap; }
+    }
   </style>
 </head>
 <body>
+  <header>
+    <a href="/" class="logo">QUANTUM<span>RAND</span></a>
+    <nav>
+      <a href="/" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Home</a>
+      <a href="/terms" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Terms</a>
+      <a href="/docs" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Docs</a>
+      <a href="/signup" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.75rem;">Get API Key</a>
+    </nav>
+  </header>
+
   <div class="container">
-    <a href="/" class="back">&larr; Back to QuantumRand</a>
-    <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: March 19, 2026</p>
+    <div class="title-area">
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">QuantumRand API Platform</p>
+      <p class="updated">Last Updated: March 2026</p>
+      <p class="entity">Noel Innovations LLC, doing business as QuantumRand</p>
+    </div>
 
-    <h2>1. Information We Collect</h2>
-    <p>When you use QuantumRand, we collect the following information:</p>
-    <ul>
-      <li><strong>Account information:</strong> Name and email address provided during API key creation.</li>
-      <li><strong>Usage data:</strong> API endpoint called, number of bits requested, response time, and timestamp. This is linked to a hash of your API key, not the key itself.</li>
-      <li><strong>Technical data:</strong> IP address (for rate limiting only, not stored long-term).</li>
-    </ul>
+    <div class="toc">
+      <div class="toc-title">Table of Contents</div>
+      <div class="toc-grid">
+        <a href="#section-1">1. Introduction</a>
+        <a href="#section-7">7. Data Retention</a>
+        <a href="#section-2">2. Information We Collect</a>
+        <a href="#section-8">8. Your Rights</a>
+        <a href="#section-3">3. How We Use Your Information</a>
+        <a href="#section-9">9. Cookies and Tracking</a>
+        <a href="#section-4">4. Data Storage and Residency</a>
+        <a href="#section-10">10. Children's Privacy</a>
+        <a href="#section-5">5. Data Sharing and Third Parties</a>
+        <a href="#section-11">11. Changes to This Policy</a>
+        <a href="#section-6">6. Security</a>
+        <a href="#section-12">12. Contact</a>
+      </div>
+    </div>
 
-    <h2>2. Information We Do NOT Collect</h2>
-    <ul>
-      <li>We do not store your plaintext API key. Only a SHA-256 hash is retained.</li>
-      <li>We do not store the random numbers generated for you. Output is returned in the response and immediately discarded.</li>
-      <li>We do not use cookies or tracking pixels.</li>
-      <li>We do not sell, rent, or share your personal information with third parties.</li>
-    </ul>
+    <!-- Section 1 -->
+    <div class="section" id="section-1">
+      <h2>1. Introduction</h2>
+      <p>Noel Innovations LLC, doing business as QuantumRand ("QuantumRand," "we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains what information we collect, how we use it, who we share it with, and your rights regarding your personal data when you use quantumrand.dev and the QuantumRand API (collectively, the "Service").</p>
+      <p>By using the Service, you agree to the collection and use of information as described in this Privacy Policy.</p>
+    </div>
 
-    <h2>3. How We Use Your Information</h2>
-    <ul>
-      <li>To authenticate API requests and enforce rate limits.</li>
-      <li>To provide usage statistics via the /keys/stats endpoint.</li>
-      <li>To monitor service health and investigate abuse.</li>
-      <li>To communicate important service updates (e.g., breaking changes, security notices).</li>
-    </ul>
+    <!-- Section 2 -->
+    <div class="section" id="section-2">
+      <h2>2. Information We Collect</h2>
 
-    <h2>4. Data Storage and Security</h2>
-    <p>Data is stored in Google Firebase Firestore. API keys are hashed with SHA-256 before storage. We use HTTPS for all API communication. Access to production systems is restricted to authorized personnel.</p>
+      <h3>2.1 Account Information</h3>
+      <p>When you create an account we collect:</p>
+      <ul>
+        <li>Email address</li>
+        <li>Password (hashed using bcrypt — never stored in plaintext)</li>
+        <li>Account creation timestamp</li>
+        <li>Subscription tier</li>
+      </ul>
 
-    <h2>5. Data Retention</h2>
-    <ul>
-      <li><strong>Account data:</strong> Retained until you request deletion or your key is revoked.</li>
-      <li><strong>Usage logs:</strong> Retained for up to 90 days for analytics, then automatically purged.</li>
-    </ul>
+      <h3>2.2 API Usage Data</h3>
+      <p>When you make API calls we automatically log:</p>
+      <ul>
+        <li>Endpoint called</li>
+        <li>HTTP method and status code</li>
+        <li>Response time in milliseconds</li>
+        <li>Entropy source (quantum / hybrid / fallback)</li>
+        <li>Timestamp of the request</li>
+        <li>API key identifier (not the raw key)</li>
+      </ul>
+      <p>This data is retained for 12 months and is visible to you in your audit dashboard.</p>
 
-    <h2>6. Your Rights</h2>
-    <p>You may request:</p>
-    <ul>
-      <li>A copy of the data we hold about your API key.</li>
-      <li>Deletion of your account and associated usage data.</li>
-      <li>Correction of inaccurate account information.</li>
-    </ul>
-    <p>To exercise these rights, contact us at <a href="mailto:jbearswrld@proton.me">jbearswrld@proton.me</a>.</p>
+      <h3>2.3 Billing Information</h3>
+      <p>Payments are processed by Stripe, Inc. QuantumRand stores only your Stripe customer ID. We do not store payment card numbers, CVVs, or bank account details. Stripe's privacy policy governs how your payment data is handled: <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>.</p>
 
-    <h2>7. Third-Party Services</h2>
-    <p>We use the following third-party services:</p>
-    <ul>
-      <li><strong>Google Firebase:</strong> Database hosting (see <a href="https://firebase.google.com/support/privacy" target="_blank">Google's privacy policy</a>).</li>
-      <li><strong>Railway:</strong> Application hosting.</li>
-      <li><strong>IBM Quantum:</strong> Quantum hardware access (when ibm_hardware backend is selected).</li>
-      <li><strong>Sentry:</strong> Error monitoring (no PII is sent).</li>
-    </ul>
+      <h3>2.4 Waitlist Information</h3>
+      <p>If you submit an early access waitlist form we collect your name, company name, email address, and estimated transaction volume. This information is used only to contact you about early access.</p>
 
-    <h2>8. Changes to This Policy</h2>
-    <p>We may update this policy from time to time. Material changes will be communicated via the API or email. Continued use after changes constitutes acceptance.</p>
+      <h3>2.5 Communications</h3>
+      <p>If you contact us by email we retain those communications to respond to your inquiry and improve the Service.</p>
 
-    <h2>9. Contact</h2>
-    <p>For privacy-related questions, contact us at <a href="mailto:jbearswrld@proton.me">jbearswrld@proton.me</a>.</p>
+      <h3>2.6 What We Do NOT Collect</h3>
+      <ul>
+        <li>Entropy values generated for your requests — these are delivered and immediately discarded</li>
+        <li>Private keys from /v1/finance/keypair — shown once in response, never stored</li>
+        <li>Payload content submitted to /v1/finance/audit-sign — only the hash and signature are stored</li>
+        <li>IP addresses — we do not log or store request IP addresses by default</li>
+        <li>Browser cookies or tracking pixels on API endpoints</li>
+      </ul>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="section" id="section-3">
+      <h2>3. How We Use Your Information</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Purpose</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Provide the Service</td><td>Process API requests, authenticate users, enforce rate limits</td></tr>
+            <tr><td>Billing</td><td>Process payments, manage subscriptions, send receipts</td></tr>
+            <tr><td>Security</td><td>Detect abuse, investigate security incidents, rotate compromised keys</td></tr>
+            <tr><td>Compliance</td><td>Maintain audit logs for SOC 2, PCI-DSS, and HIPAA compliance reviews</td></tr>
+            <tr><td>Communication</td><td>Send service updates, billing notifications, security alerts</td></tr>
+            <tr><td>Improvement</td><td>Analyze aggregate usage patterns to improve the Service</td></tr>
+            <tr><td>Legal</td><td>Comply with legal obligations and enforce our Terms of Service</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="section" id="section-4">
+      <h2>4. Data Storage and Residency</h2>
+      <p>Data is stored and processed in the United States. If you are located outside the United States, by using the Service you consent to the transfer of your data to the United States.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data Type</th>
+              <th>Location</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Account &amp; usage data</td><td>Google Cloud Firestore — United States (us-central1)</td></tr>
+            <tr><td>API infrastructure</td><td>Railway — United States</td></tr>
+            <tr><td>Billing data</td><td>Stripe — United States</td></tr>
+            <tr><td>Entropy generation</td><td>IBM Quantum — United States (IBM-operated)</td></tr>
+            <tr><td>Entropy pool</td><td>In-memory only — never written to disk</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="section" id="section-5">
+      <h2>5. Data Sharing and Third Parties</h2>
+
+      <h3>5.1 Service Providers</h3>
+      <p>We share data with the following third-party service providers strictly to operate the Service:</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Google Cloud (Firestore)</td><td>Database — account and usage data storage</td></tr>
+            <tr><td>Railway</td><td>API hosting infrastructure</td></tr>
+            <tr><td>Stripe</td><td>Payment processing</td></tr>
+            <tr><td>IBM</td><td>Quantum entropy generation via IBM Quantum API</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.2 Legal Requirements</h3>
+      <p>We may disclose your information if required by law, subpoena, court order, or government request, or if we believe disclosure is necessary to protect the rights, property, or safety of QuantumRand, our users, or the public.</p>
+
+      <h3>5.3 Business Transfers</h3>
+      <p>If Noel Innovations LLC is acquired, merges with another company, or sells substantially all of its assets, your information may be transferred as part of that transaction. We will notify you via email before your data is transferred and becomes subject to a different privacy policy.</p>
+
+      <h3>5.4 No Sale of Data</h3>
+      <p>QuantumRand does not sell, rent, or trade your personal information to third parties for their marketing purposes.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="section" id="section-6">
+      <h2>6. Security</h2>
+      <ul>
+        <li>API keys are hashed with SHA-256 before storage — raw keys are never retained</li>
+        <li>All connections use TLS 1.3 minimum</li>
+        <li>Passwords are hashed using bcrypt with appropriate cost factor</li>
+        <li>Access to production database is restricted by IAM roles with principle of least privilege</li>
+        <li>Security incidents are investigated and affected users notified within 72 hours of confirmation</li>
+        <li>No method of transmission or storage is 100% secure. If you discover a security vulnerability please contact <a href="mailto:security@quantumrand.dev">security@quantumrand.dev</a>.</li>
+      </ul>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="section" id="section-7">
+      <h2>7. Data Retention</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data Type</th>
+              <th>Retention Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Account data</td><td>Retained while account is active + 90 days after deletion</td></tr>
+            <tr><td>API usage logs</td><td>12 months rolling</td></tr>
+            <tr><td>Billing records</td><td>7 years (tax and legal compliance)</td></tr>
+            <tr><td>Waitlist data</td><td>Until you request removal or 24 months, whichever is sooner</td></tr>
+            <tr><td>Support communications</td><td>3 years</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="section" id="section-8">
+      <h2>8. Your Rights</h2>
+
+      <h3>8.1 Access and Portability</h3>
+      <p>You may export your account data and API usage logs at any time from your dashboard via the CSV export feature.</p>
+
+      <h3>8.2 Correction</h3>
+      <p>You may update your account email address from your dashboard. For other corrections contact <a href="mailto:privacy@quantumrand.dev">privacy@quantumrand.dev</a>.</p>
+
+      <h3>8.3 Deletion</h3>
+      <p>You may request deletion of your account and associated personal data by emailing <a href="mailto:privacy@quantumrand.dev">privacy@quantumrand.dev</a>. We will process deletion requests within 30 days, subject to retention requirements for billing records and legal compliance.</p>
+
+      <h3>8.4 GDPR Rights (EU Residents)</h3>
+      <p>If you are located in the European Economic Area you have the right to: access your personal data, rectify inaccurate data, erasure (right to be forgotten), restrict processing, data portability, and object to processing. To exercise these rights contact <a href="mailto:privacy@quantumrand.dev">privacy@quantumrand.dev</a>. You also have the right to lodge a complaint with your local data protection authority.</p>
+
+      <h3>8.5 CCPA Rights (California Residents)</h3>
+      <p>California residents have the right to know what personal information we collect, the right to delete personal information, and the right to opt out of the sale of personal information. QuantumRand does not sell personal information. To exercise your rights contact <a href="mailto:privacy@quantumrand.dev">privacy@quantumrand.dev</a>.</p>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="section" id="section-9">
+      <h2>9. Cookies and Tracking</h2>
+      <p>The QuantumRand dashboard uses session cookies strictly necessary for authentication. We do not use advertising cookies, tracking pixels, or third-party analytics. We do not use Google Analytics or similar tracking services on quantumrand.dev.</p>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="section" id="section-10">
+      <h2>10. Children's Privacy</h2>
+      <p>The Service is not directed to individuals under the age of 18. We do not knowingly collect personal information from children. If you believe a child has provided us personal information, contact <a href="mailto:privacy@quantumrand.dev">privacy@quantumrand.dev</a> and we will delete it promptly.</p>
+    </div>
+
+    <!-- Section 11 -->
+    <div class="section" id="section-11">
+      <h2>11. Changes to This Policy</h2>
+      <p>We may update this Privacy Policy from time to time. Material changes will be communicated via email to registered account holders at least 30 days before taking effect. The effective date at the top of this document will be updated with each revision.</p>
+    </div>
+
+    <!-- Section 12 -->
+    <div class="section" id="section-12">
+      <h2>12. Contact</h2>
+      <p>For privacy questions, data requests, or to exercise your rights:</p>
+      <p>
+        Noel Innovations LLC DBA QuantumRand<br>
+        <a href="mailto:privacy@quantumrand.dev">privacy@quantumrand.dev</a><br>
+        <a href="mailto:legal@quantumrand.dev">legal@quantumrand.dev</a><br>
+        <a href="https://quantumrand.dev/privacy">quantumrand.dev/privacy</a><br>
+        New York, NY
+      </p>
+    </div>
   </div>
-  <footer>&copy; 2026 QuantumRand. Built on quantum physics.</footer>
+
+  <footer>
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
+    &nbsp;&middot;&nbsp; <a href="/terms">Terms</a>
+    &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security">Security</a>
+    &nbsp;&middot;&nbsp; <a href="/docs">API Docs</a>
+    &nbsp;&middot;&nbsp; <a href="/status">Status</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev">Contact</a>
+  </footer>
 </body>
 </html>

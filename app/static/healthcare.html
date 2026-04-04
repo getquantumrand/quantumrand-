@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUANTUMRAND — Quantum Security for Healthcare</title>
+  <meta name="description" content="Quantum-sealed patient records, prescription signing, and tamper-evident audit trails for healthcare applications.">
+  <meta property="og:title" content="QuantumRand for Healthcare — HIPAA-Ready Security">
+  <meta property="og:description" content="Quantum-sealed patient records, prescription signing, and tamper-evident audit trails for healthcare applications.">
+  <meta property="og:url" content="https://quantumrand.dev/healthcare">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QuantumRand">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="QuantumRand for Healthcare — HIPAA-Ready Security">
+  <meta name="twitter:description" content="Quantum-sealed patient records, prescription signing, and tamper-evident audit trails for healthcare applications.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #1a1a1a;
+      --border: #222222;
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79, 142, 247, 0.15);
+      --accent-hover: #6ba0ff;
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.15);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.15);
+      --red: #ef4444;
+      --radius: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+
+    /* ── Header ───────────────────────────────── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+    }
+
+    .logo span { color: var(--accent); }
+
+    nav { display: flex; gap: 0.75rem; align-items: center; }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #00ff41;
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #00cc33;
+      box-shadow: 0 0 24px rgba(0, 255, 65, 0.25);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-outline:hover { background: var(--accent-glow); }
+
+    .btn-green {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .btn-green:hover {
+      background: #16a34a;
+      box-shadow: 0 0 24px var(--green-glow);
+    }
+
+    /* ── Sections ─────────────────────────────── */
+    section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    /* ── Hero ──────────────────────────────────── */
+    .hero {
+      padding-top: 10rem;
+      padding-bottom: 4rem;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: var(--green-glow);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 0.35rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero p {
+      max-width: 660px;
+      margin: 0 auto 2.5rem;
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-ctas .btn { font-size: 0.9rem; padding: 0.8rem 1.8rem; }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-stat {
+      text-align: center;
+    }
+
+    .hero-stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .hero-stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.25rem;
+    }
+
+    /* ── Problem Section ──────────────────────── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .problem-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: border-color 0.2s;
+    }
+
+    .problem-card:hover { border-color: var(--red); }
+
+    .problem-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .problem-card h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .problem-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Primitives Section ───────────────────── */
+    .primitives-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .primitive-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: border-color 0.2s;
+    }
+
+    .primitive-card:hover { border-color: var(--accent); }
+
+    .primitive-endpoint {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+
+    .primitive-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .primitive-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .primitive-use {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+    }
+
+    .primitive-use strong { color: var(--text); }
+
+    /* ── Compliance Section ────────────────────── */
+    .compliance-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .compliance-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .compliance-card:hover { border-color: var(--green); }
+
+    .compliance-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .compliance-card h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .compliance-card p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Use Cases Section ────────────────────── */
+    .usecases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .usecase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .usecase-card:hover { border-color: var(--accent); }
+
+    .usecase-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .usecase-card h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .usecase-card p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Pool Health Widget ────────────────────── */
+    .pool-widget {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .pool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .pool-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pool-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    .pool-dot.degraded { background: var(--amber); }
+    .pool-dot.unhealthy { background: var(--red); animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .pool-status-text {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    .pool-status-text.degraded { color: var(--amber); }
+    .pool-status-text.unhealthy { color: var(--red); }
+
+    .pool-refresh-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .pool-bar-container {
+      background: var(--surface-2);
+      border-radius: 6px;
+      height: 24px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .pool-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 6px;
+      transition: width 0.6s ease;
+      min-width: 2%;
+    }
+
+    .pool-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .pool-metric {
+      text-align: center;
+    }
+
+    .pool-metric-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .pool-metric-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.25rem;
+    }
+
+    /* ── Pricing Section ──────────────────────── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .price-card:hover { transform: translateY(-4px); }
+
+    .price-card.popular {
+      border-color: var(--accent);
+      position: relative;
+    }
+
+    .price-card.popular::before {
+      content: 'Recommended';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.9rem;
+      border-radius: 20px;
+    }
+
+    .price-tier {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .price-amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+
+    .price-amount span {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .price-features {
+      list-style: none;
+      margin: 1.5rem 0;
+      flex: 1;
+    }
+
+    .price-features li {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .price-features li:last-child { border-bottom: none; }
+
+    .price-card .btn {
+      width: 100%;
+      text-align: center;
+      font-size: 0.8rem;
+      margin-top: auto;
+    }
+
+    /* ── Early Access Section ──────────────────── */
+    .early-access {
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4rem 2rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .early-access h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .early-access p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 500px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .waitlist-form input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.75rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .waitlist-form input:focus { border-color: var(--accent); }
+
+    .waitlist-form input::placeholder { color: var(--text-muted); }
+
+    .waitlist-msg {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      min-height: 1.2em;
+    }
+
+    .waitlist-msg.success { color: var(--green); }
+    .waitlist-msg.error { color: var(--red); }
+
+    /* ── Footer ───────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Responsive ───────────────────────────── */
+    @media (max-width: 900px) {
+      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+      .problem-grid { grid-template-columns: 1fr; }
+      .compliance-grid { grid-template-columns: 1fr; }
+      .usecases-grid { grid-template-columns: repeat(2, 1fr); }
+      .pool-metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 700px) {
+      .primitives-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .usecases-grid { grid-template-columns: 1fr; }
+      header { padding: 1rem 1.25rem; }
+      section { padding: 3.5rem 1.25rem; }
+      .hero { padding-top: 8rem; }
+      .hero-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <a href="/" class="logo">QUANTUM<span>RAND</span></a>
+    <nav>
+      <a href="/" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Home</a>
+      <a href="#endpoints" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Endpoints</a>
+      <a href="#pricing" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Pricing</a>
+      <a href="/docs" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Docs</a>
+      <a href="#early-access" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.75rem;">Early Access</a>
+    </nav>
+  </header>
+
+  <!-- 1. Hero Section -->
+  <section class="hero">
+    <div class="hero-badge">Built for Healthcare</div>
+    <h1>Quantum-Grade Security for<br><span class="accent">Healthcare Infrastructure</span></h1>
+    <p>Tamper-proof patient records, quantum-signed prescriptions, and HIPAA-ready audit trails — all powered by true IBM Quantum entropy.</p>
+    <div class="hero-ctas">
+      <a href="/signup" class="btn btn-green">Get Early Access</a>
+      <a href="/docs" class="btn btn-outline">View Docs</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">&lt;50ms</div>
+        <div class="hero-stat-label">Avg Latency</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">99.9%</div>
+        <div class="hero-stat-label">Uptime SLA</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">5</div>
+        <div class="hero-stat-label">Healthcare Endpoints</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" id="heroPoolStatus">LIVE</div>
+        <div class="hero-stat-label">Entropy Pool</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. The Problem -->
+  <section>
+    <div class="section-label">The Problem</div>
+    <div class="section-title">Healthcare Data Is the Most Targeted in the World</div>
+    <div class="section-subtitle">Medical records sell for 10x more than credit cards on the dark web. Weak security primitives put patients and providers at risk.</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">&#128196;</div>
+        <h3>Record Tampering</h3>
+        <p>Patient records modified after the fact are nearly impossible to detect without quantum-grade timestamping. Audit trails built on PRNGs can be forged.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">&#128138;</div>
+        <h3>Prescription Fraud</h3>
+        <p>E-prescribing systems rely on weak token generation that can be forged or replayed. Quantum-signed tokens make prescription fraud cryptographically impossible.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">&#128269;</div>
+        <h3>HIPAA Audit Gaps</h3>
+        <p>Access logs built on software randomness can be manipulated. Regulators are demanding provable, tamper-evident audit trails — not just timestamps.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. The 5 Healthcare Endpoints -->
+  <section id="endpoints">
+    <div class="section-label">Quantum Healthcare Primitives</div>
+    <div class="section-title">Five endpoints purpose-built for healthcare</div>
+    <div class="section-subtitle">Each endpoint uses quantum-generated entropy from IBM Quantum hardware, pre-pooled for sub-50ms response times. No PHI is ever stored.</div>
+    <div class="primitives-grid">
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/health/record-seal</div>
+        <h3>Patient Record Seal</h3>
+        <p>Quantum-timestamp and HMAC-sign a patient record update. Creates a tamper-evident seal that proves when a record was created and that it hasn't been modified.</p>
+        <div class="primitive-use"><strong>Use case:</strong> HIPAA-compliant record timestamping, EHR integrity</div>
+      </div>
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/health/rx-sign</div>
+        <h3>Prescription Token</h3>
+        <p>Quantum-sign a prescription with a tamper-proof token and 24-hour TTL. Each token is cryptographically bound to the prescription, patient, and provider.</p>
+        <div class="primitive-use"><strong>Use case:</strong> E-prescribing verification, prescription fraud prevention</div>
+      </div>
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/health/access-log</div>
+        <h3>Access Log Signature</h3>
+        <p>Quantum-sign every access log entry — who accessed what record, when, and what they did. Tamper-evident by design, impossible to backdate.</p>
+        <div class="primitive-use"><strong>Use case:</strong> HIPAA audit trails, breach investigation evidence</div>
+      </div>
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/health/consent-seal</div>
+        <h3>Consent Seal</h3>
+        <p>Quantum-seal a patient consent form with a cryptographic signature. Proves consent was given at a specific time — immutable and verifiable.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Procedure consent, data sharing agreements, research consent</div>
+      </div>
+      <div class="primitive-card" style="grid-column: span 2;">
+        <div class="primitive-endpoint">POST /v1/health/device-id</div>
+        <h3>Medical Device Identity</h3>
+        <p>Generate a quantum-random 256-bit fingerprint for connected medical devices. Globally unique, unpredictable device identities that can't be spoofed or enumerated. Perfect for securing infusion pumps, patient monitors, and any IoT device in a clinical environment.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Medical IoT identity, device authentication, equipment tracking</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. HIPAA Compliance -->
+  <section>
+    <div class="section-label">Compliance</div>
+    <div class="section-title">Built for HIPAA From the Ground Up</div>
+    <div class="section-subtitle">QuantumRand never stores PHI. We provide the cryptographic primitives — you control the data. Every seal, signature, and log is quantum-grade.</div>
+    <div class="compliance-grid">
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128220;</div>
+        <h3>Immutable Audit Trail</h3>
+        <p>Every access log entry quantum-timestamped and signed with HMAC-SHA256. Tamper-evident by design — modification is cryptographically detectable.</p>
+      </div>
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128221;</div>
+        <h3>BAA Available</h3>
+        <p>Business Associate Agreement available for Business tier and above. We take HIPAA compliance as seriously as you do.</p>
+      </div>
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128274;</div>
+        <h3>Tamper-Proof Records</h3>
+        <p>Quantum HMAC signatures make after-the-fact modification detectable. Every seal includes a quantum timestamp and cryptographic proof.</p>
+      </div>
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128229;</div>
+        <h3>Export Ready</h3>
+        <p>Audit logs exportable to CSV for OCR investigations and compliance reviews. Full chain-of-custody documentation for every quantum operation.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pool Health Widget -->
+  <section>
+    <div class="section-label">Live Status</div>
+    <div class="section-title">Entropy pool — real-time</div>
+    <div class="section-subtitle">Our pre-generated entropy pool ensures quantum bits are always available. No waiting for circuit execution.</div>
+    <div class="pool-widget">
+      <div class="pool-header">
+        <div class="pool-status">
+          <div class="pool-dot" id="poolDot"></div>
+          <span class="pool-status-text" id="poolStatusText">Loading...</span>
+        </div>
+        <span class="pool-refresh-label" id="poolRefreshLabel">auto-refreshes every 10s</span>
+      </div>
+      <div class="pool-bar-container">
+        <div class="pool-bar" id="poolBar" style="width: 0%"></div>
+      </div>
+      <div class="pool-metrics">
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolSize">—</div>
+          <div class="pool-metric-label">Pool Size (bits)</div>
+        </div>
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolTarget">—</div>
+          <div class="pool-metric-label">Target</div>
+        </div>
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolSource">—</div>
+          <div class="pool-metric-label">Entropy Source</div>
+        </div>
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolRefills">—</div>
+          <div class="pool-metric-label">Refill Count</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Use Cases -->
+  <section>
+    <div class="section-label">Use Cases</div>
+    <div class="section-title">Quantum security for every healthcare system</div>
+    <div class="usecases-grid">
+      <div class="usecase-card">
+        <div class="usecase-icon">&#127973;</div>
+        <h3>EHR Systems</h3>
+        <p>Tamper-proof record seals for every patient update. Quantum timestamps that prove when data was created or modified.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128138;</div>
+        <h3>E-Prescribing Platforms</h3>
+        <p>Quantum-signed prescription tokens with 24-hour TTL. Eliminate forgery and replay attacks on electronic prescriptions.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128225;</div>
+        <h3>Medical IoT Devices</h3>
+        <p>Quantum device fingerprints for infusion pumps, monitors, and wearables. Unique, unspoofable identities for connected devices.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128300;</div>
+        <h3>Clinical Trial Data</h3>
+        <p>Quantum-sealed data integrity for trial results. Prove that clinical data hasn't been tampered with post-collection.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128179;</div>
+        <h3>Insurance Claims</h3>
+        <p>Quantum audit trails for claims processing. Every access, modification, and approval cryptographically logged and verifiable.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128187;</div>
+        <h3>Telehealth Platforms</h3>
+        <p>Quantum-signed session records and consent forms. Prove that virtual visits happened and consent was obtained — tamper-proof.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Pricing -->
+  <section id="pricing">
+    <div class="section-label">Pricing</div>
+    <div class="section-title">Start free. Scale with your platform.</div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <div class="price-amount">$0<span>/mo</span></div>
+        <ul class="price-features">
+          <li>1,000 calls / day</li>
+          <li>256 bits max</li>
+          <li>No card required</li>
+          <li>All 5 healthcare endpoints</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Get Started</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Indie</div>
+        <div class="price-amount">$9<span>/mo</span></div>
+        <ul class="price-features">
+          <li>50,000 calls / day</li>
+          <li>1,024 bits max</li>
+          <li>Email support</li>
+          <li>Audit log dashboard</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Get Started</a>
+      </div>
+      <div class="price-card popular">
+        <div class="price-tier">Startup</div>
+        <div class="price-amount">$49<span>/mo</span></div>
+        <ul class="price-features">
+          <li>500,000 calls / day</li>
+          <li>2,048 bits max</li>
+          <li>Priority support</li>
+          <li>CSV export + webhooks</li>
+        </ul>
+        <a href="/signup" class="btn btn-primary">Get Started</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Business</div>
+        <div class="price-amount">$299<span>/mo</span></div>
+        <ul class="price-features">
+          <li>Unlimited calls / day</li>
+          <li>4,096 bits max</li>
+          <li>BAA available</li>
+          <li>SLA + dedicated support</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Contact Sales</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Early Access Waitlist -->
+  <section id="early-access">
+    <div class="early-access">
+      <div class="section-label">Early Access</div>
+      <h2>Get priority access to quantum healthcare security</h2>
+      <p>Join the waitlist to lock in early-adopter pricing and get a dedicated onboarding session with our team. Limited spots available.</p>
+      <form class="waitlist-form" id="waitlistForm" onsubmit="submitWaitlist(event)">
+        <input type="email" id="waitlistEmail" placeholder="you@hospital.org" required>
+        <input type="text" id="waitlistCompany" placeholder="Organization name" style="min-width:150px;">
+        <button type="submit" class="btn btn-green" id="waitlistBtn">Join Waitlist</button>
+      </form>
+      <div class="waitlist-msg" id="waitlistMsg"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
+    &nbsp;&middot;&nbsp; <a href="/terms">Terms</a>
+    &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security">Security</a>
+    &nbsp;&middot;&nbsp; <a href="/docs">API Docs</a>
+    &nbsp;&middot;&nbsp; <a href="/status">Status</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev">Contact</a>
+  </footer>
+
+  <script>
+    // Pool health widget
+    async function fetchPool() {
+      try {
+        var resp = await fetch('/health/pool');
+        var data = await resp.json();
+        if (!data.success) return;
+        var d = data.data;
+        var size = d.pool_size_bits || 0;
+        var target = d.pool_target || 1;
+        var healthy = d.pool_healthy;
+        var source = d.entropy_source || '—';
+        var refills = d.refill_count || 0;
+        var pct = Math.min(100, Math.round((size / target) * 100));
+
+        document.getElementById('poolBar').style.width = pct + '%';
+        document.getElementById('poolSize').textContent = size.toLocaleString();
+        document.getElementById('poolTarget').textContent = target.toLocaleString();
+        document.getElementById('poolSource').textContent = source;
+        document.getElementById('poolRefills').textContent = refills;
+
+        var dot = document.getElementById('poolDot');
+        var txt = document.getElementById('poolStatusText');
+        var heroStatus = document.getElementById('heroPoolStatus');
+
+        if (healthy) {
+          dot.className = 'pool-dot';
+          txt.className = 'pool-status-text';
+          txt.textContent = 'Healthy';
+          heroStatus.textContent = 'LIVE';
+          heroStatus.style.color = '';
+        } else if (pct > 25) {
+          dot.className = 'pool-dot degraded';
+          txt.className = 'pool-status-text degraded';
+          txt.textContent = 'Degraded';
+          heroStatus.textContent = 'DEGRADED';
+          heroStatus.style.color = 'var(--amber)';
+        } else {
+          dot.className = 'pool-dot unhealthy';
+          txt.className = 'pool-status-text unhealthy';
+          txt.textContent = 'Low';
+          heroStatus.textContent = 'LOW';
+          heroStatus.style.color = 'var(--red)';
+        }
+      } catch (e) {
+        document.getElementById('poolStatusText').textContent = 'Offline';
+        document.getElementById('poolDot').className = 'pool-dot unhealthy';
+      }
+    }
+
+    fetchPool();
+    setInterval(fetchPool, 10000);
+
+    // Waitlist form
+    async function submitWaitlist(e) {
+      e.preventDefault();
+      var btn = document.getElementById('waitlistBtn');
+      var msg = document.getElementById('waitlistMsg');
+      var email = document.getElementById('waitlistEmail').value.trim();
+      var company = document.getElementById('waitlistCompany').value.trim();
+
+      if (!email) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      msg.textContent = '';
+      msg.className = 'waitlist-msg';
+
+      try {
+        var resp = await fetch('/v1/waitlist', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email: email, company: company, source: 'healthcare'})
+        });
+        var data = await resp.json();
+        if (data.success) {
+          msg.textContent = "You're on the list! We'll be in touch soon.";
+          msg.className = 'waitlist-msg success';
+          document.getElementById('waitlistEmail').value = '';
+          document.getElementById('waitlistCompany').value = '';
+        } else {
+          msg.textContent = data.error || 'Something went wrong. Try again.';
+          msg.className = 'waitlist-msg error';
+        }
+      } catch (err) {
+        msg.textContent = 'Could not connect. Please try again.';
+        msg.className = 'waitlist-msg error';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Join Waitlist';
+    }
+  </script>
+
+</body>
+</html>

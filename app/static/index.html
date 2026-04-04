@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QUANTUMRAND — True Quantum Randomness</title>
+  <meta name="description" content="Generate true random numbers using IBM Quantum hardware. REST API with SDKs for Python, JavaScript, and Go. Free tier available.">
+  <meta property="og:title" content="QuantumRand — True Quantum Randomness API">
+  <meta property="og:description" content="Generate true random numbers using IBM Quantum hardware. REST API with SDKs for Python, JavaScript, and Go. Free tier available.">
+  <meta property="og:url" content="https://quantumrand.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QuantumRand">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="QuantumRand — True Quantum Randomness API">
+  <meta name="twitter:description" content="Generate true random numbers using IBM Quantum hardware. REST API with SDKs for Python, JavaScript, and Go. Free tier available.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='12' fill='%230a0a0a'/%3E%3Cpolygon points='50,8 87,29 87,71 50,92 13,71 13,29' fill='none' stroke='%2300D4FF' stroke-width='6'/%3E%3Cpolygon points='50,28 69,39 69,61 50,72 31,61 31,39' fill='%2300D4FF' opacity='0.3'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -25,6 +35,10 @@
       --accent-glow: rgba(79, 142, 247, 0.15);
       --accent-hover: #6ba0ff;
       --radius: 10px;
+      --green: #00ff41;
+      --green-hover: #00cc33;
+      --green-glow: rgba(0, 255, 65, 0.25);
+      --cyan: #00D4FF;
     }
 
     html {
@@ -71,6 +85,63 @@
       color: var(--accent);
     }
 
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .nav-link {
+      padding: 0.45rem 1rem;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      background: var(--accent-glow);
+    }
+
+    .nav-link-muted {
+      padding: 0.45rem 0.7rem;
+      font-size: 0.7rem;
+      color: #888;
+    }
+
+    .nav-cta {
+      padding: 0.45rem 1rem;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      background: var(--green);
+      color: #000;
+      border-radius: var(--radius);
+    }
+
+    .nav-cta:hover {
+      background: var(--green-hover);
+      box-shadow: 0 0 24px var(--green-glow);
+      color: #000;
+    }
+
+    /* Hamburger menu */
+    .hamburger {
+      display: none;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 1.4rem;
+      line-height: 1;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
     .btn {
       display: inline-block;
       padding: 0.6rem 1.4rem;
@@ -84,13 +155,13 @@
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: #fff;
+      background: var(--green);
+      color: #000;
     }
 
     .btn-primary:hover {
-      background: var(--accent-hover);
-      box-shadow: 0 0 24px var(--accent-glow);
+      background: var(--green-hover);
+      box-shadow: 0 0 24px var(--green-glow);
     }
 
     .btn-outline {
@@ -129,7 +200,7 @@
     /* ── Hero ──────────────────────────────────── */
     .hero {
       padding-top: 10rem;
-      padding-bottom: 4rem;
+      padding-bottom: 2rem;
       text-align: center;
     }
 
@@ -157,6 +228,29 @@
     .hero .btn {
       font-size: 0.95rem;
       padding: 0.85rem 2rem;
+    }
+
+    /* ── Trust Badge Row ─────────────────────── */
+    .trust-row {
+      text-align: center;
+      margin-top: 2rem;
+      padding: 0 1rem;
+    }
+
+    .trust-row p {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .trust-row .trust-icon {
+      color: var(--cyan);
+    }
+
+    .trust-row .trust-sep {
+      color: #333;
+      margin: 0 0.3rem;
     }
 
     /* ── Code Example ─────────────────────────── */
@@ -233,6 +327,40 @@
     .code-panel .cmt { color: #555; }
     .code-panel .op { color: #56b6c2; }
     .code-panel .flag { color: #e06c75; }
+
+    .sdk-install {
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    .sdk-install .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .sdk-install a {
+      display: inline-block;
+      background: var(--surface);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      border: 1px solid var(--border);
+      margin: 0.25rem 0.3rem;
+      transition: border-color 0.2s;
+    }
+
+    .sdk-install a:hover {
+      border-color: var(--accent);
+    }
+
+    .sdk-note {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
 
     /* ── How It Works ─────────────────────────── */
     .steps {
@@ -369,6 +497,117 @@
       margin-top: auto;
     }
 
+    .pricing-note {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Quantyx Section ─────────────────────── */
+    .quantyx-section {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .quantyx-section .section-label {
+      color: var(--cyan);
+    }
+
+    .quantyx-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .quantyx-product {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      transition: border-color 0.2s;
+    }
+
+    .quantyx-product:hover {
+      border-color: var(--cyan);
+    }
+
+    .quantyx-product-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.3rem;
+    }
+
+    .quantyx-product-name .qbadge {
+      color: var(--cyan);
+      margin-right: 0.3rem;
+    }
+
+    .quantyx-product-use {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    .quantyx-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .quantyx-stat {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .quantyx-quote {
+      text-align: center;
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--text-muted);
+      font-weight: 300;
+      max-width: 700px;
+      margin: 0 auto 0.5rem;
+      line-height: 1.7;
+    }
+
+    .quantyx-attribution {
+      text-align: center;
+      font-size: 0.72rem;
+      color: #555;
+      margin-bottom: 2.5rem;
+    }
+
+    .quantyx-ctas {
+      text-align: center;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .quantyx-ctas .btn {
+      font-size: 0.8rem;
+    }
+
+    .btn-cyan {
+      background: var(--cyan);
+      color: #000;
+    }
+
+    .btn-cyan:hover {
+      background: #00b8e0;
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.25);
+    }
+
     /* ── Footer ───────────────────────────────── */
     footer {
       text-align: center;
@@ -434,6 +673,18 @@
       cursor: not-allowed;
     }
 
+    .demo-note {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.72rem;
+      color: #555;
+    }
+
+    .demo-cta {
+      text-align: center;
+      margin-top: 2.5rem;
+    }
+
     @keyframes bitReveal {
       0% { opacity: 0; transform: translateY(4px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -450,6 +701,58 @@
       .pricing-grid {
         grid-template-columns: repeat(2, 1fr);
       }
+
+      .quantyx-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: block;
+      }
+
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(10, 10, 10, 0.97);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        padding: 1rem;
+        gap: 0;
+      }
+
+      .nav-links.open {
+        display: flex;
+      }
+
+      .nav-links a {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 0.85rem 1rem;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        font-size: 0.85rem;
+      }
+
+      .nav-links a:last-child {
+        border-bottom: none;
+      }
+
+      .nav-links .nav-cta {
+        margin-top: 0.5rem;
+        border-radius: var(--radius);
+      }
     }
 
     @media (max-width: 700px) {
@@ -463,6 +766,10 @@
         margin: 0 auto;
       }
 
+      .quantyx-grid {
+        grid-template-columns: 1fr;
+      }
+
       header {
         padding: 1rem 1.25rem;
       }
@@ -474,6 +781,10 @@
       .hero {
         padding-top: 8rem;
       }
+
+      .quantyx-stats {
+        gap: 1rem;
+      }
     }
   </style>
 </head>
@@ -482,18 +793,38 @@
   <!-- Header -->
   <header>
     <div class="logo">QUANTUM<span>RAND</span></div>
-    <nav style="display:flex;gap:1rem;align-items:center;">
-      <a href="#pricing" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">Pricing</a>
-      <a href="/docs" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">Docs</a>
-      <a href="/signup" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.8rem;">Get API Key</a>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">&#9776;</button>
+    <nav class="nav-links" id="navLinks">
+      <a href="/fintech" class="nav-link">For Fintechs</a>
+      <a href="/gaming" class="nav-link">For Gaming</a>
+      <a href="/healthcare" class="nav-link">For Healthcare</a>
+      <a href="/legal" class="nav-link">For Legal</a>
+      <a href="/cybersecurity" class="nav-link">For Security</a>
+      <a href="/iot" class="nav-link">For IoT</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="/docs" class="nav-link">Docs</a>
+      <a href="/signup" class="nav-cta">Get API Key</a>
+      <a href="/terms" class="nav-link-muted">Terms</a>
+      <a href="/privacy" class="nav-link-muted">Privacy</a>
     </nav>
   </header>
 
   <!-- Hero -->
   <section class="hero">
     <h1>True Quantum Randomness.<br><span class="accent">One Line of Code.</span></h1>
-    <p>Every key, token, and secret your app creates decided by physics &mdash; not math. Powered by a real quantum computer.</p>
+    <p>Every key, token, and secret your app creates decided by physics &mdash; not math. Powered by IBM Quantum hardware with Qiskit integration.</p>
     <a href="/signup" class="btn btn-primary">Get Your Free API Key &rarr;</a>
+    <div class="trust-row">
+      <p>
+        <span class="trust-icon">&#x2B21;</span> Powered by IBM Quantum
+        <span class="trust-sep">&middot;</span>
+        NIST PQC Aligned
+        <span class="trust-sep">&middot;</span>
+        Qiskit Integration
+        <span class="trust-sep">&middot;</span>
+        99.9% Uptime
+      </p>
+    </div>
   </section>
 
   <!-- Code Example -->
@@ -507,25 +838,34 @@
         <button class="code-tab" data-tab="curl">cURL</button>
       </div>
       <div class="code-panel active" id="tab-python">
-<pre><span class="kw">import</span> quantumrand
-key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
+<pre><span class="kw">from</span> getquantumrand <span class="kw">import</span> QuantumRandClient
+
+qr = QuantumRandClient(<span class="str">"YOUR_API_KEY"</span>)
+entropy = qr.<span class="fn">hex</span>(<span class="num">64</span>)
+<span class="fn">print</span>(entropy)
 <span class="cmt"># a3f9c2e1b4d87f3c... — decided by quantum physics</span></pre>
       </div>
       <div class="code-panel" id="tab-javascript">
-<pre><span class="kw">import</span> quantumrand <span class="kw">from</span> <span class="str">'quantumrand'</span>
-<span class="kw">const</span> key = <span class="kw">await</span> quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
+<pre><span class="kw">import</span> { QuantumRandClient } <span class="kw">from</span> <span class="str">'getquantumrand'</span>
+
+<span class="kw">const</span> qr = <span class="kw">new</span> QuantumRandClient({ <span class="fn">apiKey</span>: <span class="str">'YOUR_API_KEY'</span> })
+<span class="kw">const</span> entropy = <span class="kw">await</span> qr.<span class="fn">hex</span>(<span class="num">64</span>)
+console.<span class="fn">log</span>(entropy)
 <span class="cmt">// a3f9c2e1b4d87f3c... — decided by quantum physics</span></pre>
       </div>
       <div class="code-panel" id="tab-curl">
-<pre><span class="fn">curl</span> <span class="flag">-H</span> <span class="str">"X-API-Key: qr_your_key"</span> \
-  https://quantumrand.dev/generate/hex?n=<span class="num">256</span></pre>
+<pre><span class="fn">curl</span> <span class="flag">-X</span> POST https://quantumrand.dev/generate/hex \
+  <span class="flag">-H</span> <span class="str">"X-API-Key: YOUR_API_KEY"</span> \
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="str">'{"n": 64}'</span></pre>
       </div>
     </div>
-    <div style="text-align:center;margin-top:2rem;">
-      <span style="font-size:0.8rem;color:var(--text-muted);">Install via</span>&nbsp;&nbsp;
-      <code style="background:var(--surface);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.8rem;color:var(--accent);border:1px solid var(--border);">pip install quantumrand</code>&nbsp;&nbsp;
-      <code style="background:var(--surface);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.8rem;color:var(--accent);border:1px solid var(--border);">npm install quantumrand</code>
+    <div class="sdk-install">
+      <div class="label">Install the SDK</div>
+      <a href="https://pypi.org/project/getquantumrand" target="_blank" rel="noopener">pip install getquantumrand</a>
+      <a href="https://www.npmjs.com/package/getquantumrand" target="_blank" rel="noopener">npm install getquantumrand</a>
     </div>
+    <div class="sdk-note">Get your free API key at <a href="/signup">quantumrand.dev</a> &mdash; no credit card required.</div>
   </section>
 
   <!-- How It Works -->
@@ -561,9 +901,9 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
         <div class="price-tier">Free</div>
         <div class="price-amount">$0<span>/mo</span></div>
         <ul class="price-features">
-          <li>100 calls / day</li>
+          <li>1,000 calls / day</li>
           <li>256 bits max</li>
-          <li>Community support</li>
+          <li>No card required</li>
         </ul>
         <a href="/signup" class="btn btn-outline">Get Started</a>
       </div>
@@ -572,7 +912,7 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
         <div class="price-tier">Indie</div>
         <div class="price-amount">$9<span>/mo</span></div>
         <ul class="price-features">
-          <li>1,000 calls / day</li>
+          <li>50,000 calls / day</li>
           <li>1,024 bits max</li>
           <li>Email support</li>
         </ul>
@@ -583,7 +923,7 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
         <div class="price-tier">Startup</div>
         <div class="price-amount">$49<span>/mo</span></div>
         <ul class="price-features">
-          <li>10,000 calls / day</li>
+          <li>500,000 calls / day</li>
           <li>2,048 bits max</li>
           <li>Priority support</li>
         </ul>
@@ -594,7 +934,7 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
         <div class="price-tier">Business</div>
         <div class="price-amount">$299<span>/mo</span></div>
         <ul class="price-features">
-          <li>100,000 calls / day</li>
+          <li>10M calls / day</li>
           <li>4,096 bits max</li>
           <li>Dedicated support</li>
         </ul>
@@ -602,6 +942,7 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
       </div>
 
     </div>
+    <div class="pricing-note">Need more? <a href="mailto:legal@quantumrand.dev">Contact us</a> for enterprise volume pricing.</div>
   </section>
 
   <!-- Live Demo -->
@@ -617,20 +958,121 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
         <button class="btn btn-primary demo-btn" id="demoGenerate" onclick="runDemo()">Generate 64 Quantum Bits</button>
       </div>
     </div>
+    <div class="demo-note">First request may take up to 2 seconds on cold start. Subsequent requests average &lt; 200ms.</div>
+    <div class="demo-cta">
+      <a href="/signup" class="btn btn-primary">Start Building with Quantum Entropy &rarr;</a>
+    </div>
+  </section>
+
+  <!-- Quantyx Section -->
+  <section class="quantyx-section">
+    <div class="section-label">Ecosystem</div>
+    <div class="section-title">Powering the Quantyx Platform</div>
+    <p style="font-size:0.85rem;color:var(--text-muted);font-weight:300;margin-bottom:2.5rem;max-width:700px;line-height:1.7;">
+      Quantyx &mdash; a 17-product post-quantum security platform &mdash; chose QuantumRand as its sole entropy backbone.
+    </p>
+
+    <div class="quantyx-grid">
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Citrus</div>
+        <div class="quantyx-product-use">Quantum-seeded session tokens</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> GroundRules</div>
+        <div class="quantyx-product-use">Quantum tie-breaking entropy</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Stellaris</div>
+        <div class="quantyx-product-use">Post-quantum key generation</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Vaultis</div>
+        <div class="quantyx-product-use">Hardware-grade entropy seeding</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Axiom</div>
+        <div class="quantyx-product-use">Quantum-random audit trails</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Nexus</div>
+        <div class="quantyx-product-use">Quantum mesh key exchange</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Prism</div>
+        <div class="quantyx-product-use">Entropy-backed data masking</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Sentinel</div>
+        <div class="quantyx-product-use">Quantum challenge-response auth</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Helix</div>
+        <div class="quantyx-product-use">Quantum-sealed DNA hash chains</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Forge</div>
+        <div class="quantyx-product-use">Quantum certificate minting</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Bastion</div>
+        <div class="quantyx-product-use">Quantum firewall entropy pool</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Meridian</div>
+        <div class="quantyx-product-use">Quantum-random geo-routing</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Orbit</div>
+        <div class="quantyx-product-use">Satellite-synced entropy feeds</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Cortex</div>
+        <div class="quantyx-product-use">AI model weight initialization</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Epoch</div>
+        <div class="quantyx-product-use">Quantum timestamping service</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Lattice</div>
+        <div class="quantyx-product-use">Post-quantum lattice key seeding</div>
+      </div>
+      <div class="quantyx-product">
+        <div class="quantyx-product-name"><span class="qbadge">&#x2B21;</span> Zenith</div>
+        <div class="quantyx-product-use">Quantum compliance attestation</div>
+      </div>
+    </div>
+
+    <div class="quantyx-stats">
+      <span class="quantyx-stat">17 Products</span>
+      <span class="quantyx-stat">1 Entropy Source</span>
+      <span class="quantyx-stat">0 PRNG</span>
+      <span class="quantyx-stat">IBM Quantum Hardware</span>
+    </div>
+
+    <div class="quantyx-quote">"We evaluated every entropy source available. QuantumRand is the only answer."</div>
+    <div class="quantyx-attribution">&mdash; Quantyx Engineering Team</div>
+
+    <div class="quantyx-ctas">
+      <a href="https://quantyx.io" target="_blank" rel="noopener" class="btn btn-cyan">View Quantyx Platform &rarr;</a>
+      <a href="/docs" class="btn btn-outline">Read Integration Guide &rarr;</a>
+    </div>
   </section>
 
   <!-- Footer -->
   <footer>
-    &copy; 2026 QuantumRand. Built on quantum physics.
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
     &nbsp;&middot;&nbsp; <a href="/terms">Terms</a>
     &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security">Security</a>
     &nbsp;&middot;&nbsp; <a href="/docs">API Docs</a>
     &nbsp;&middot;&nbsp; <a href="/status">Status</a>
-    &nbsp;&middot;&nbsp; <a href="mailto:jbearswrld@proton.me">Contact</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev">Contact</a>
   </footer>
 
-  <!-- Tab Switching & Demo -->
+  <!-- Tab Switching, Demo & Mobile Nav -->
   <script>
+    /* Tab switching */
     document.querySelectorAll('.code-tab').forEach(function(tab) {
       tab.addEventListener('click', function() {
         document.querySelectorAll('.code-tab').forEach(function(t) { t.classList.remove('active'); });
@@ -640,6 +1082,7 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
       });
     });
 
+    /* Live demo */
     async function runDemo() {
       var btn = document.getElementById('demoGenerate');
       var bitsEl = document.getElementById('demoBits');
@@ -651,7 +1094,10 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
       metaEl.textContent = '';
 
       try {
-        var resp = await fetch('/demo/bits');
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+        var resp = await fetch('/demo/bits', { signal: controller.signal });
+        clearTimeout(timeoutId);
         var data = await resp.json();
         if (data.success) {
           var bits = data.data.raw_bits;
@@ -672,11 +1118,30 @@ key = quantumrand.<span class="fn">generate</span>(<span class="num">256</span>)
           bitsEl.textContent = 'Error generating bits';
         }
       } catch (e) {
-        bitsEl.textContent = 'Could not connect to API';
+        if (e.name === 'AbortError') {
+          bitsEl.textContent = 'Request timed out. Try again.';
+        } else {
+          bitsEl.textContent = 'Could not connect to API';
+        }
       }
       btn.disabled = false;
       btn.textContent = 'Generate 64 Quantum Bits';
     }
+
+    /* Hamburger menu */
+    var hamburger = document.getElementById('hamburgerBtn');
+    var navLinks = document.getElementById('navLinks');
+    hamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      navLinks.classList.toggle('open');
+      hamburger.innerHTML = navLinks.classList.contains('open') ? '&#10005;' : '&#9776;';
+    });
+    document.addEventListener('click', function(e) {
+      if (!navLinks.contains(e.target) && !hamburger.contains(e.target)) {
+        navLinks.classList.remove('open');
+        hamburger.innerHTML = '&#9776;';
+      }
+    });
   </script>
 
 </body>

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 # Sentry must be initialized before other imports
-from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET, DEMO_RATE_LIMIT
+from app.config import ENV, API_VERSION, APP_NAME, ALLOWED_ORIGINS, PILOTOS_ENABLED, PILOTOS_PORT, ADMIN_SECRET, DEMO_RATE_LIMIT, STRIPE_ENABLED
 _sentry_dsn = __import__("os").getenv("SENTRY_DSN", "")
 if _sentry_dsn:
     import sentry_sdk
@@ -26,6 +26,7 @@ from pydantic import BaseModel
 from app.quantum_engine import QuantumEngine, VALID_BACKENDS
 from app.auth import require_api_key, get_ratelimit_info, TIER_LIMITS
 from app.database import (
+    db,
     create_api_key,
     log_usage,
     update_last_used,
@@ -619,14 +620,113 @@ app.include_router(finance_router)
 v1_finance = APIRouter(prefix="/v1")
 v1_finance.include_router(finance_router)
 
+# Gaming router — quantum gaming endpoints
+from app.routers.gaming import router as gaming_router
+import app.routers.gaming as _gaming_mod
+_gaming_mod.engine = engine
+app.include_router(gaming_router)
+v1_gaming = APIRouter(prefix="/v1")
+v1_gaming.include_router(gaming_router)
+
+# Healthcare router — quantum healthcare security endpoints
+from app.routers.healthcare import router as healthcare_router
+import app.routers.healthcare as _healthcare_mod
+_healthcare_mod.engine = engine
+app.include_router(healthcare_router)
+v1_healthcare = APIRouter(prefix="/v1")
+v1_healthcare.include_router(healthcare_router)
+
+# Legal router — quantum legal & insurance endpoints
+from app.routers.legal import router as legal_router
+import app.routers.legal as _legal_mod
+_legal_mod.engine = engine
+app.include_router(legal_router)
+v1_legal = APIRouter(prefix="/v1")
+v1_legal.include_router(legal_router)
+
+# Cybersecurity router — quantum cybersecurity endpoints
+from app.routers.cybersecurity import router as cybersecurity_router
+import app.routers.cybersecurity as _cybersecurity_mod
+_cybersecurity_mod.engine = engine
+app.include_router(cybersecurity_router)
+v1_cybersecurity = APIRouter(prefix="/v1")
+v1_cybersecurity.include_router(cybersecurity_router)
+
+# IoT router — quantum IoT & embedded endpoints
+from app.routers.iot import router as iot_router
+import app.routers.iot as _iot_mod
+_iot_mod.engine = engine
+app.include_router(iot_router)
+v1_iot = APIRouter(prefix="/v1")
+v1_iot.include_router(iot_router)
+
 # Billing router — Stripe subscription management
 from app.billing import router as billing_router
 app.include_router(billing_router)
+
+# --- Waitlist endpoint ---
+
+class WaitlistRequest(BaseModel):
+    email: str
+    company: str = ""
+    source: str = "website"
+
+
+@app.post("/v1/waitlist", include_in_schema=False)
+def join_waitlist(body: WaitlistRequest):
+    """Add an email to the early access waitlist."""
+    from datetime import datetime as _dt, timezone as _tz
+    email = body.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email required")
+    waitlist_col = db.collection("waitlist")
+    # Check for duplicate
+    existing = list(waitlist_col.where("email", "==", email).limit(1).stream())
+    if existing:
+        return {"success": True, "data": {"message": "Already on the waitlist!"}}
+    waitlist_col.add({
+        "email": email,
+        "company": body.company.strip(),
+        "source": body.source,
+        "created_at": _dt.now(_tz.utc).isoformat(),
+    })
+    logger.info(f"Waitlist signup: {email}")
+    return {"success": True, "data": {"message": "Added to waitlist"}}
+
 
 # Mount static files
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+# --- Root-level static files ---
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt():
+    path = Path(__file__).parent / "static" / "robots.txt"
+    if path.exists():
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml():
+    path = Path(__file__).parent / "static" / "sitemap.xml"
+    if path.exists():
+        from fastapi.responses import Response
+        return Response(content=path.read_text(), media_type="application/xml")
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    path = Path(__file__).parent / "static" / "favicon.ico"
+    if path.exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(path, media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 # --- Custom docs route ---
@@ -705,6 +805,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     headers = {"X-Request-ID": request_id}
     if getattr(exc, "headers", None):
         headers.update(exc.headers)
+    # Serve branded 404 page for browser requests
+    if exc.status_code == 404:
+        accept = request.headers.get("accept", "")
+        if "text/html" in accept:
+            page = Path(__file__).parent / "static" / "404.html"
+            if page.exists():
+                return HTMLResponse(content=page.read_text(), status_code=404, headers=headers)
     return JSONResponse(
         status_code=exc.status_code,
         content={"success": False, "error": exc.detail, "request_id": request_id},
@@ -799,6 +906,27 @@ def auth_me(request: Request):
     stats = get_usage_stats(key_hash)
     tier = user.get("tier", "free")
     limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
+
+    # Billing info
+    renewal_date = None
+    sub_id = user.get("stripe_subscription_id", "")
+    grace_until = user.get("grace_until", "")
+    in_grace = False
+    if grace_until:
+        from datetime import datetime as _dt, timezone as _tz
+        try:
+            in_grace = _dt.now(_tz.utc) < _dt.fromisoformat(grace_until)
+        except (ValueError, TypeError):
+            pass
+
+    if sub_id and STRIPE_ENABLED:
+        try:
+            import stripe as _stripe
+            _sub = _stripe.Subscription.retrieve(sub_id)
+            renewal_date = _sub.current_period_end
+        except Exception:
+            pass
+
     return {
         "success": True,
         "data": {
@@ -812,7 +940,10 @@ def auth_me(request: Request):
                 "total_bits": stats.get("total_bits", 0),
             },
             "has_billing": bool(user.get("stripe_customer_id")),
-            "subscription_id": user.get("stripe_subscription_id", ""),
+            "subscription_id": sub_id,
+            "renewal_date": renewal_date,
+            "in_grace_period": in_grace,
+            "grace_until": grace_until if in_grace else None,
         },
     }
 
@@ -863,6 +994,62 @@ def login_page():
 @app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
 def dashboard_page():
     path = Path(__file__).parent / "static" / "dashboard.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/security", response_class=HTMLResponse, include_in_schema=False)
+def security_page():
+    path = Path(__file__).parent / "static" / "security.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/fintech", response_class=HTMLResponse, include_in_schema=False)
+def fintech_page():
+    path = Path(__file__).parent / "static" / "fintech.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/gaming", response_class=HTMLResponse, include_in_schema=False)
+def gaming_page():
+    path = Path(__file__).parent / "static" / "gaming.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/healthcare", response_class=HTMLResponse, include_in_schema=False)
+def healthcare_page():
+    path = Path(__file__).parent / "static" / "healthcare.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/legal", response_class=HTMLResponse, include_in_schema=False)
+def legal_page():
+    path = Path(__file__).parent / "static" / "legal.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/cybersecurity", response_class=HTMLResponse, include_in_schema=False)
+def cybersecurity_page():
+    path = Path(__file__).parent / "static" / "cybersecurity.html"
+    if path.exists():
+        return HTMLResponse(content=path.read_text())
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/iot", response_class=HTMLResponse, include_in_schema=False)
+def iot_page():
+    path = Path(__file__).parent / "static" / "iot.html"
     if path.exists():
         return HTMLResponse(content=path.read_text())
     raise HTTPException(status_code=404, detail="Not found")
@@ -1539,3 +1726,8 @@ v1.add_api_route("/audit/export", audit_export, methods=["GET"])
 v1.add_api_route("/audit/summary", audit_summary, methods=["GET"])
 app.include_router(v1)
 app.include_router(v1_finance)
+app.include_router(v1_gaming)
+app.include_router(v1_healthcare)
+app.include_router(v1_legal)
+app.include_router(v1_cybersecurity)
+app.include_router(v1_iot)

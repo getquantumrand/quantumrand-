@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — QuantumRand</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #222222;
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --accent: #4f8ef7;
+      --radius: 10px;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Header ───────────────────────────────── */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    nav {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    nav a {
+      padding: 0.45rem 1rem;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Main content ─────────────────────────── */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      margin-top: 60px;
+    }
+
+    .error-code {
+      font-size: 6rem;
+      font-weight: 700;
+      color: #00ff41;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .description {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 500px;
+      margin-bottom: 2rem;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.65rem 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: #00ff41;
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #00cc33;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--text-muted);
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    footer a {
+      color: var(--text-muted);
+    }
+
+    footer a:hover {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" style="text-decoration:none;"><div class="logo">QUANTUM<span>RAND</span></div></a>
+    <nav>
+      <a href="/docs" class="btn btn-outline">Docs</a>
+      <a href="/signup" class="btn btn-primary" style="background:#00ff41;color:#000;">Get API Key</a>
+    </nav>
+  </header>
+
+  <div class="content">
+    <div class="error-code">404</div>
+    <div class="subtitle">Page not found</div>
+    <p class="description">The quantum state you're looking for has collapsed into nothingness.</p>
+    <div class="buttons">
+      <a href="/" class="btn btn-primary">Back to Home</a>
+      <a href="/docs" class="btn btn-outline">API Docs</a>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
+    &nbsp;&middot;&nbsp; <a href="/terms">Terms</a>
+    &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security">Security</a>
+    &nbsp;&middot;&nbsp; <a href="/docs">API Docs</a>
+    &nbsp;&middot;&nbsp; <a href="/status">Status</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev">Contact</a>
+  </footer>
+
+</body>
+</html>

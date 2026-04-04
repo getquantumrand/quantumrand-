@@ -1,5 +1,5 @@
 {
-  "name": "quantumrand",
+  "name": "getquantumrand",
   "version": "1.0.0",
   "description": "QuantumRand SDK — True quantum randomness as a service",
   "main": "src/index.js",
@@ -13,5 +13,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "homepage": "https://quantumrand.dev"
 }

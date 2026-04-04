@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Log In — QuantumRand</title>
+  <meta name="description" content="Log in to your QuantumRand dashboard to manage API keys and monitor usage.">
+  <meta property="og:title" content="Log In — QuantumRand">
+  <meta property="og:description" content="Log in to your QuantumRand dashboard to manage API keys and monitor usage.">
+  <meta property="og:url" content="https://quantumrand.dev/login">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QuantumRand">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Log In — QuantumRand">
+  <meta name="twitter:description" content="Log in to your QuantumRand dashboard to manage API keys and monitor usage.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -130,8 +139,8 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.88rem;
       font-weight: 600;
-      background: var(--accent);
-      color: #fff;
+      background: #00ff41;
+      color: #000;
       border: none;
       border-radius: var(--radius);
       cursor: pointer;
@@ -140,8 +149,8 @@
     }
 
     .btn-primary:hover {
-      background: var(--accent-hover);
-      box-shadow: 0 0 24px var(--accent-glow);
+      background: #00cc33;
+      box-shadow: 0 0 24px rgba(0, 255, 65, 0.25);
     }
 
     .btn-primary:disabled {
@@ -211,6 +220,16 @@
   <div class="footer-link">
     Don't have an account? <a href="/signup">Sign up</a>
   </div>
+
+  <footer style="text-align:center;padding:3rem 2rem;border-top:1px solid #222222;font-size:0.75rem;color:#888888;width:100%;margin-top:2rem;">
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
+    &nbsp;&middot;&nbsp; <a href="/terms" style="color:#4f8ef7;text-decoration:none;">Terms</a>
+    &nbsp;&middot;&nbsp; <a href="/privacy" style="color:#4f8ef7;text-decoration:none;">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security" style="color:#4f8ef7;text-decoration:none;">Security</a>
+    &nbsp;&middot;&nbsp; <a href="/docs" style="color:#4f8ef7;text-decoration:none;">API Docs</a>
+    &nbsp;&middot;&nbsp; <a href="/status" style="color:#4f8ef7;text-decoration:none;">Status</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev" style="color:#4f8ef7;text-decoration:none;">Contact</a>
+  </footer>
 
   <script>
     var form = document.getElementById('loginForm');

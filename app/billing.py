@@ -2,6 +2,7 @@
 
 import logging
 import stripe
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
 
@@ -11,6 +12,7 @@ from app.config import (
 )
 from app.database import (
     update_user_stripe, update_user_tier, get_user_by_stripe_customer,
+    _users_col,
 )
 
 logger = logging.getLogger("quantumrand")
@@ -19,6 +21,8 @@ router = APIRouter(prefix="/billing", tags=["Billing"], include_in_schema=False)
 
 if STRIPE_ENABLED:
     stripe.api_key = STRIPE_SECRET_KEY
+
+GRACE_PERIOD_DAYS = 3
 
 TIER_PRICES = {
     "indie": STRIPE_PRICE_INDIE,
@@ -72,7 +76,6 @@ def create_checkout(body: CheckoutRequest, request: Request):
         try:
             sub = stripe.Subscription.retrieve(sub_id)
             if sub.status in ("active", "trialing"):
-                # Use subscription update instead of new checkout
                 portal = stripe.billing_portal.Session.create(
                     customer=customer_id,
                     return_url="https://quantumrand.dev/dashboard",
@@ -125,6 +128,15 @@ def billing_status(request: Request):
     status = "none"
     current_period_end = None
     cancel_at_period_end = False
+    grace_until = user.get("grace_until", "")
+    in_grace = False
+
+    if grace_until:
+        try:
+            grace_dt = datetime.fromisoformat(grace_until)
+            in_grace = datetime.now(timezone.utc) < grace_dt
+        except (ValueError, TypeError):
+            pass
 
     if sub_id and STRIPE_ENABLED:
         try:
@@ -143,6 +155,8 @@ def billing_status(request: Request):
             "current_period_end": current_period_end,
             "cancel_at_period_end": cancel_at_period_end,
             "has_billing": bool(user.get("stripe_customer_id")),
+            "in_grace_period": in_grace,
+            "grace_until": grace_until if in_grace else None,
         },
     }
 
@@ -167,8 +181,10 @@ def cancel_subscription(request: Request):
         raise HTTPException(status_code=502, detail="Could not cancel subscription")
 
     update_user_tier(user["user_id"], "free")
-    from app.database import _users_col
-    _users_col.document(user["user_id"]).update({"stripe_subscription_id": ""})
+    _users_col.document(user["user_id"]).update({
+        "stripe_subscription_id": "",
+        "grace_until": "",
+    })
 
     return {"success": True, "data": {"message": "Subscription cancelled. Downgraded to free tier."}}
 
@@ -198,6 +214,8 @@ async def stripe_webhook(request: Request):
         _handle_subscription_deleted(data)
     elif event_type == "invoice.payment_failed":
         _handle_payment_failed(data)
+    elif event_type == "invoice.payment_succeeded":
+        _handle_payment_succeeded(data)
 
     return {"received": True}
 
@@ -215,6 +233,8 @@ def _handle_checkout_completed(session):
 
     update_user_stripe(user_id, customer_id, sub_id)
     update_user_tier(user_id, tier)
+    # Clear any grace period from previous failed payments
+    _users_col.document(user_id).update({"grace_until": ""})
     logger.info(f"User {user_id} upgraded to {tier} via checkout")
 
 
@@ -231,9 +251,9 @@ def _handle_subscription_updated(subscription):
         new_tier = PRICE_TO_TIER.get(price_id, "")
         if new_tier:
             update_user_tier(user["user_id"], new_tier)
-            from app.database import _users_col
             _users_col.document(user["user_id"]).update({
-                "stripe_subscription_id": subscription["id"]
+                "stripe_subscription_id": subscription["id"],
+                "grace_until": "",
             })
             logger.info(f"User {user['user_id']} subscription updated to {new_tier}")
 
@@ -246,12 +266,58 @@ def _handle_subscription_deleted(subscription):
         return
 
     update_user_tier(user["user_id"], "free")
-    from app.database import _users_col
-    _users_col.document(user["user_id"]).update({"stripe_subscription_id": ""})
+    _users_col.document(user["user_id"]).update({
+        "stripe_subscription_id": "",
+        "grace_until": "",
+    })
     logger.info(f"User {user['user_id']} subscription deleted, downgraded to free")
 
 
 def _handle_payment_failed(invoice):
-    """Payment failed — log warning (Stripe will retry automatically)."""
+    """Payment failed — start 3-day grace period, then downgrade to free."""
     customer_id = invoice.get("customer")
-    logger.warning(f"Payment failed for customer {customer_id}")
+    user = get_user_by_stripe_customer(customer_id)
+    if not user:
+        logger.warning(f"Payment failed for unknown customer {customer_id}")
+        return
+
+    # Only set grace period if user is on a paid tier and not already in grace
+    tier = user.get("tier", "free")
+    if tier == "free":
+        return
+
+    existing_grace = user.get("grace_until", "")
+    if existing_grace:
+        # Already in grace period — check if it expired
+        try:
+            grace_dt = datetime.fromisoformat(existing_grace)
+            if datetime.now(timezone.utc) >= grace_dt:
+                # Grace period expired — downgrade now
+                update_user_tier(user["user_id"], "free")
+                _users_col.document(user["user_id"]).update({
+                    "stripe_subscription_id": "",
+                    "grace_until": "",
+                })
+                logger.warning(f"User {user['user_id']} grace period expired, downgraded to free")
+                return
+        except (ValueError, TypeError):
+            pass
+        logger.warning(f"Payment failed again for user {user['user_id']}, grace period still active")
+        return
+
+    # Start grace period
+    grace_until = (datetime.now(timezone.utc) + timedelta(days=GRACE_PERIOD_DAYS)).isoformat()
+    _users_col.document(user["user_id"]).update({"grace_until": grace_until})
+    logger.warning(f"Payment failed for user {user['user_id']} ({tier}), grace period until {grace_until}")
+
+
+def _handle_payment_succeeded(invoice):
+    """Payment succeeded — clear any grace period."""
+    customer_id = invoice.get("customer")
+    user = get_user_by_stripe_customer(customer_id)
+    if not user:
+        return
+
+    if user.get("grace_until"):
+        _users_col.document(user["user_id"]).update({"grace_until": ""})
+        logger.info(f"User {user['user_id']} payment succeeded, grace period cleared")

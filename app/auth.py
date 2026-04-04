@@ -11,10 +11,10 @@ from app.config import MAX_BITS_FREE, MAX_BITS_INDIE, MAX_BITS_STARTUP, MAX_BITS
 HMAC_TOLERANCE = 300  # 5 minutes
 
 TIER_LIMITS = {
-    "free":     {"calls_per_day": 100,     "max_bits": MAX_BITS_FREE},
-    "indie":    {"calls_per_day": 1_000,   "max_bits": MAX_BITS_INDIE},
-    "startup":  {"calls_per_day": 10_000,  "max_bits": MAX_BITS_STARTUP},
-    "business": {"calls_per_day": 100_000, "max_bits": MAX_BITS_BUSINESS},
+    "free":     {"calls_per_day": 1_000,       "max_bits": MAX_BITS_FREE},
+    "indie":    {"calls_per_day": 50_000,      "max_bits": MAX_BITS_INDIE},
+    "startup":  {"calls_per_day": 500_000,     "max_bits": MAX_BITS_STARTUP},
+    "business": {"calls_per_day": 10_000_000,  "max_bits": MAX_BITS_BUSINESS},
 }
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)

@@ -1,0 +1,54 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: pilotos-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pilotos123
+      MYSQL_DATABASE: QCloudConnectorServerDB
+      MYSQL_USER: pilotos
+      MYSQL_PASSWORD: pilotos123
+    ports:
+      - "13306:3306"
+    volumes:
+      - pilotos-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6.0
+    container_name: pilotos-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: pilot
+      MONGO_INITDB_ROOT_PASSWORD: pilotos123
+      MONGO_INITDB_DATABASE: Pilot
+    ports:
+      - "17017:27017"
+    volumes:
+      - pilotos-mongo-data:/data/db
+    restart: unless-stopped
+
+  pilotos:
+    image: pilotos:4.0
+    container_name: pilotos-server
+    ports:
+      - "10010:10080"
+      - "10020:5000"
+      - "10021:8080"
+    volumes:
+      - ./pilotos-4.0/PilotOS-Config:/home/PilotAdmin/PilotOS/Config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  pilotos-mysql-data:
+  pilotos-mongo-data:

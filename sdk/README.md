@@ -1,17 +1,17 @@
-# QuantumRand Python SDK
+# getquantumrand — Python SDK
 
 True quantum randomness as a service.
 
 ## Install
 
 ```bash
-pip install quantumrand
+pip install getquantumrand
 ```
 
 ## Quick Start
 
 ```python
-from quantumrand import QuantumRandClient
+from getquantumrand import QuantumRandClient
 
 qr = QuantumRandClient("qr_your_api_key")
 
@@ -46,7 +46,7 @@ print(qr.stats())
 ```python
 qr = QuantumRandClient(
     api_key="qr_your_key",
-    base_url="https://quantumrand.up.railway.app",  # default
+    base_url="https://quantumrand.dev",  # default
     backend="origin_cloud",  # or "aer_simulator", "origin_wuyuan"
     timeout=30.0,
 )
@@ -55,7 +55,7 @@ qr = QuantumRandClient(
 ## Get a Free API Key
 
 ```bash
-curl -X POST https://quantumrand.up.railway.app/keys/create \
+curl -X POST https://quantumrand.dev/keys/create \
   -H "Content-Type: application/json" \
   -d '{"name": "Your Name", "email": "you@example.com"}'
 ```

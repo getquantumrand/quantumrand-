@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUANTUMRAND — Quantum Security for IoT & Embedded</title>
+  <meta name="description" content="Quantum device fingerprints, firmware signing, session keys, and telemetry sealing for IoT and embedded systems.">
+  <meta property="og:title" content="QuantumRand for IoT — Quantum Device Security">
+  <meta property="og:description" content="Quantum device fingerprints, firmware signing, session keys, and telemetry sealing for IoT and embedded systems.">
+  <meta property="og:url" content="https://quantumrand.dev/iot">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QuantumRand">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="QuantumRand for IoT — Quantum Device Security">
+  <meta name="twitter:description" content="Quantum device fingerprints, firmware signing, session keys, and telemetry sealing for IoT and embedded systems.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #1a1a1a;
+      --border: #222222;
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79, 142, 247, 0.15);
+      --accent-hover: #6ba0ff;
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.15);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.15);
+      --red: #ef4444;
+      --radius: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+    }
+
+    .logo span { color: var(--accent); }
+
+    nav { display: flex; gap: 0.75rem; align-items: center; }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary { background: #00ff41; color: #000; }
+    .btn-primary:hover { background: #00cc33; box-shadow: 0 0 24px rgba(0, 255, 65, 0.25); }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-outline:hover { background: var(--accent-glow); }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { background: #16a34a; box-shadow: 0 0 24px var(--green-glow); }
+
+    section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero {
+      padding-top: 10rem;
+      padding-bottom: 4rem;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: var(--green-glow);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 0.35rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero p {
+      max-width: 660px;
+      margin: 0 auto 2.5rem;
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .hero-ctas .btn { font-size: 0.9rem; padding: 0.8rem 1.8rem; }
+
+    .hero-stats { display: flex; justify-content: center; gap: 3rem; margin-top: 3rem; flex-wrap: wrap; }
+    .hero-stat { text-align: center; }
+    .hero-stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .hero-stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem; }
+
+    .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .problem-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; transition: border-color 0.2s; }
+    .problem-card:hover { border-color: var(--red); }
+    .problem-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+    .problem-card h3 { font-size: 0.9rem; font-weight: 600; color: #fff; margin-bottom: 0.75rem; }
+    .problem-card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; }
+
+    .primitives-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+    .primitive-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; transition: border-color 0.2s; }
+    .primitive-card:hover { border-color: var(--accent); }
+    .primitive-endpoint { font-size: 0.7rem; font-weight: 600; color: var(--accent); background: var(--accent-glow); padding: 0.25rem 0.6rem; border-radius: 4px; display: inline-block; margin-bottom: 0.75rem; }
+    .primitive-card h3 { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem; }
+    .primitive-card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 1rem; }
+    .primitive-use { font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 0.75rem; }
+    .primitive-use strong { color: var(--text); }
+
+    .compliance-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+    .compliance-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; transition: border-color 0.2s; }
+    .compliance-card:hover { border-color: var(--green); }
+    .compliance-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+    .compliance-card h3 { font-size: 0.9rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem; }
+    .compliance-card p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.7; }
+
+    .usecases-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .usecase-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; transition: border-color 0.2s; }
+    .usecase-card:hover { border-color: var(--accent); }
+    .usecase-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+    .usecase-card h3 { font-size: 0.9rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem; }
+    .usecase-card p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.7; }
+
+    .pool-widget { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; max-width: 700px; margin: 0 auto; }
+    .pool-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .pool-status { display: flex; align-items: center; gap: 0.5rem; }
+    .pool-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    .pool-dot.degraded { background: var(--amber); }
+    .pool-dot.unhealthy { background: var(--red); animation: none; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .pool-status-text { font-size: 0.85rem; font-weight: 600; color: var(--green); }
+    .pool-status-text.degraded { color: var(--amber); }
+    .pool-status-text.unhealthy { color: var(--red); }
+    .pool-refresh-label { font-size: 0.7rem; color: var(--text-muted); }
+    .pool-bar-container { background: var(--surface-2); border-radius: 6px; height: 24px; overflow: hidden; margin-bottom: 1.5rem; }
+    .pool-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 6px; transition: width 0.6s ease; min-width: 2%; }
+    .pool-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .pool-metric { text-align: center; }
+    .pool-metric-value { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .pool-metric-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem; }
+
+    .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .price-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 1.5rem; display: flex; flex-direction: column; transition: border-color 0.2s, transform 0.2s; }
+    .price-card:hover { transform: translateY(-4px); }
+    .price-card.popular { border-color: var(--accent); position: relative; }
+    .price-card.popular::before { content: 'Recommended'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.9rem; border-radius: 20px; }
+    .price-tier { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .price-amount { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
+    .price-amount span { font-size: 0.85rem; font-weight: 400; color: var(--text-muted); }
+    .price-features { list-style: none; margin: 1.5rem 0; flex: 1; }
+    .price-features li { font-size: 0.78rem; color: var(--text-muted); padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+    .price-features li:last-child { border-bottom: none; }
+    .price-card .btn { width: 100%; text-align: center; font-size: 0.8rem; margin-top: auto; }
+
+    .early-access { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4rem 2rem; max-width: 700px; margin: 0 auto; }
+    .early-access h2 { font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 0.75rem; }
+    .early-access p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.7; }
+    .waitlist-form { display: flex; gap: 0.75rem; max-width: 500px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+    .waitlist-form input { flex: 1; min-width: 200px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); outline: none; transition: border-color 0.2s; }
+    .waitlist-form input:focus { border-color: var(--accent); }
+    .waitlist-form input::placeholder { color: var(--text-muted); }
+    .waitlist-msg { margin-top: 1rem; font-size: 0.8rem; min-height: 1.2em; }
+    .waitlist-msg.success { color: var(--green); }
+    .waitlist-msg.error { color: var(--red); }
+
+    footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); }
+
+    @media (max-width: 900px) {
+      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+      .problem-grid { grid-template-columns: 1fr; }
+      .compliance-grid { grid-template-columns: 1fr; }
+      .usecases-grid { grid-template-columns: repeat(2, 1fr); }
+      .pool-metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 700px) {
+      .primitives-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .usecases-grid { grid-template-columns: 1fr; }
+      header { padding: 1rem 1.25rem; }
+      section { padding: 3.5rem 1.25rem; }
+      .hero { padding-top: 8rem; }
+      .hero-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="logo">QUANTUM<span>RAND</span></a>
+    <nav>
+      <a href="/" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Home</a>
+      <a href="#endpoints" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Endpoints</a>
+      <a href="#pricing" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Pricing</a>
+      <a href="/docs" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.75rem;">Docs</a>
+      <a href="#early-access" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.75rem;">Early Access</a>
+    </nav>
+  </header>
+
+  <!-- 1. Hero -->
+  <section class="hero">
+    <div class="hero-badge">Built for IoT & Embedded</div>
+    <h1>Quantum Identity for<br><span class="accent">Every Device at Scale</span></h1>
+    <p>Unique quantum fingerprints at manufacture, quantum-signed firmware, and tamper-proof telemetry — for fleets of thousands or millions of devices.</p>
+    <div class="hero-ctas">
+      <a href="/signup" class="btn btn-green">Get Your API Key</a>
+      <a href="/docs" class="btn btn-outline">View Docs</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">&lt;50ms</div>
+        <div class="hero-stat-label">Avg Latency</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">99.9%</div>
+        <div class="hero-stat-label">Uptime SLA</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">5</div>
+        <div class="hero-stat-label">IoT Endpoints</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" id="heroPoolStatus">LIVE</div>
+        <div class="hero-stat-label">Entropy Pool</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. The Problem -->
+  <section>
+    <div class="section-label">The Problem</div>
+    <div class="section-title">IoT Security Is Broken at the Identity Layer</div>
+    <div class="section-subtitle">Billions of devices ship with weak, cloneable, or nonexistent cryptographic identity. Quantum entropy fixes the foundation.</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">&#128260;</div>
+        <h3>Cloned Device IDs</h3>
+        <p>Software-generated device identities can be duplicated, enabling rogue devices to join your fleet undetected. Quantum fingerprints are physically unclonable.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">&#128190;</div>
+        <h3>Unsigned Firmware</h3>
+        <p>OTA updates without quantum-grade signing are vulnerable to supply chain attacks and malicious injection. One compromised update can brick an entire fleet.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">&#128200;</div>
+        <h3>Tampered Telemetry</h3>
+        <p>Sensor data with no cryptographic seal can be manipulated in transit — critical in medical, industrial, and grid applications where data integrity is life-safety.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. The 5 IoT Endpoints -->
+  <section id="endpoints">
+    <div class="section-label">Quantum IoT Primitives</div>
+    <div class="section-title">Five endpoints purpose-built for IoT</div>
+    <div class="section-subtitle">Each endpoint uses quantum-generated entropy from IBM Quantum hardware, pre-pooled for sub-50ms response times.</div>
+    <div class="primitives-grid">
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/iot/device-id</div>
+        <h3>Device Fingerprint</h3>
+        <p>256-bit quantum device fingerprint generated at manufacture. Globally unique, unpredictable, and impossible to clone or enumerate.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Routers, sensors, cameras, medical devices — identity at birth</div>
+      </div>
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/iot/firmware-sign</div>
+        <h3>Firmware Signing</h3>
+        <p>Quantum-sign firmware payloads with HMAC-SHA256. Devices cryptographically verify every OTA update before installing — reject tampered payloads instantly.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Secure OTA updates, supply chain integrity, fleet-wide patching</div>
+      </div>
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/iot/session-key</div>
+        <h3>Session Key</h3>
+        <p>256-bit quantum session keys for device-to-cloud communication. Configurable duration from 1 minute to 24 hours — perfect for MQTT, CoAP, or custom protocols.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Encrypted device comms, MQTT TLS, CoAP DTLS, custom protocols</div>
+      </div>
+      <div class="primitive-card">
+        <div class="primitive-endpoint">POST /v1/iot/provision</div>
+        <h3>Provisioning Token</h3>
+        <p>One-time quantum provisioning tokens for zero-touch device onboarding. Token expires on first use — rogue devices attempting to join get nothing.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Fleet onboarding, zero-touch provisioning, device registration</div>
+      </div>
+      <div class="primitive-card" style="grid-column: span 2;">
+        <div class="primitive-endpoint">POST /v1/iot/telemetry-seal</div>
+        <h3>Telemetry Seal</h3>
+        <p>Quantum-seal telemetry data batches with HMAC-SHA256. Creates a tamper-evident proof that sensor readings have not been modified in transit or at rest. Every seal includes the device ID, data hash, reading count, and quantum timestamp — a complete chain of integrity from sensor to cloud.</p>
+        <div class="primitive-use"><strong>Use case:</strong> Industrial sensors, medical devices, smart grid metering, environmental monitoring</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Scale & Manufacturing -->
+  <section>
+    <div class="section-label">Fleet Scale</div>
+    <div class="section-title">Built for Fleet Scale</div>
+    <div class="section-subtitle">From a single prototype to millions of devices in production. Quantum identity scales with your fleet.</div>
+    <div class="compliance-grid">
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128736;</div>
+        <h3>Manufacture-Time Identity</h3>
+        <p>Quantum fingerprint burned in at production, not provisioned later. Every device ships with a unique, unclonable identity from day one.</p>
+      </div>
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128274;</div>
+        <h3>Zero-Touch Provisioning</h3>
+        <p>One-time quantum tokens expire on first use. Devices self-register securely — rogue devices attempting to claim a token get nothing.</p>
+      </div>
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128190;</div>
+        <h3>Signed OTA Updates</h3>
+        <p>Devices cryptographically verify every firmware update before installing. Quantum HMAC signatures make supply chain injection detectable.</p>
+      </div>
+      <div class="compliance-card">
+        <div class="compliance-icon">&#128202;</div>
+        <h3>Tamper-Evident Data</h3>
+        <p>Sealed telemetry batches are cryptographically verifiable. Any modification in transit or at rest is immediately detectable.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pool Health Widget -->
+  <section>
+    <div class="section-label">Live Status</div>
+    <div class="section-title">Entropy pool — real-time</div>
+    <div class="section-subtitle">Our pre-generated entropy pool ensures quantum bits are always available. No waiting for circuit execution.</div>
+    <div class="pool-widget">
+      <div class="pool-header">
+        <div class="pool-status">
+          <div class="pool-dot" id="poolDot"></div>
+          <span class="pool-status-text" id="poolStatusText">Loading...</span>
+        </div>
+        <span class="pool-refresh-label" id="poolRefreshLabel">auto-refreshes every 10s</span>
+      </div>
+      <div class="pool-bar-container">
+        <div class="pool-bar" id="poolBar" style="width: 0%"></div>
+      </div>
+      <div class="pool-metrics">
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolSize">—</div>
+          <div class="pool-metric-label">Pool Size (bits)</div>
+        </div>
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolTarget">—</div>
+          <div class="pool-metric-label">Target</div>
+        </div>
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolSource">—</div>
+          <div class="pool-metric-label">Entropy Source</div>
+        </div>
+        <div class="pool-metric">
+          <div class="pool-metric-value" id="poolRefills">—</div>
+          <div class="pool-metric-label">Refill Count</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Use Cases -->
+  <section>
+    <div class="section-label">Use Cases</div>
+    <div class="section-title">Quantum security for every connected device</div>
+    <div class="usecases-grid">
+      <div class="usecase-card">
+        <div class="usecase-icon">&#127968;</div>
+        <h3>Smart Home Devices</h3>
+        <p>Quantum identity for smart locks, thermostats, and cameras. Every device has a unique, unclonable fingerprint from the factory.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#127981;</div>
+        <h3>Industrial Sensors</h3>
+        <p>Tamper-proof telemetry seals for pressure, temperature, and flow sensors. Data integrity from sensor to SCADA — verifiable at every hop.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128137;</div>
+        <h3>Medical IoT</h3>
+        <p>Quantum device identity and sealed telemetry for infusion pumps, patient monitors, and wearables. HIPAA-grade data integrity.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128663;</div>
+        <h3>Automotive ECUs</h3>
+        <p>Quantum-signed firmware for engine control units. Prevent unauthorized tuning, protect against supply chain attacks on vehicle software.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#9889;</div>
+        <h3>Smart Grid & Energy</h3>
+        <p>Quantum-sealed metering data for smart grids. Tamper-evident energy readings that utilities and regulators can trust.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128230;</div>
+        <h3>Logistics & Asset Tracking</h3>
+        <p>Quantum device fingerprints for GPS trackers and RFID tags. Prove chain of custody from warehouse to delivery.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Pricing -->
+  <section id="pricing">
+    <div class="section-label">Pricing</div>
+    <div class="section-title">Start free. Scale with your fleet.</div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <div class="price-amount">$0<span>/mo</span></div>
+        <ul class="price-features">
+          <li>1,000 calls / day</li>
+          <li>256 bits max</li>
+          <li>No card required</li>
+          <li>All 5 IoT endpoints</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Get Started</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Indie</div>
+        <div class="price-amount">$9<span>/mo</span></div>
+        <ul class="price-features">
+          <li>50,000 calls / day</li>
+          <li>1,024 bits max</li>
+          <li>Email support</li>
+          <li>Audit log dashboard</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Get Started</a>
+      </div>
+      <div class="price-card popular">
+        <div class="price-tier">Startup</div>
+        <div class="price-amount">$49<span>/mo</span></div>
+        <ul class="price-features">
+          <li>500,000 calls / day</li>
+          <li>2,048 bits max</li>
+          <li>Priority support</li>
+          <li>CSV export + webhooks</li>
+        </ul>
+        <a href="/signup" class="btn btn-primary">Get Started</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Business</div>
+        <div class="price-amount">$299<span>/mo</span></div>
+        <ul class="price-features">
+          <li>Unlimited calls / day</li>
+          <li>4,096 bits max</li>
+          <li>Dedicated support</li>
+          <li>SLA + custom integrations</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Contact Sales</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Early Access -->
+  <section id="early-access">
+    <div class="early-access">
+      <div class="section-label">Early Access</div>
+      <h2>Get priority access to quantum IoT security</h2>
+      <p>Join the waitlist to lock in early-adopter pricing and get a dedicated onboarding session with our team. Limited spots available.</p>
+      <form class="waitlist-form" id="waitlistForm" onsubmit="submitWaitlist(event)">
+        <input type="email" id="waitlistEmail" placeholder="you@manufacturer.com" required>
+        <input type="text" id="waitlistCompany" placeholder="Company name" style="min-width:150px;">
+        <button type="submit" class="btn btn-green" id="waitlistBtn">Join Waitlist</button>
+      </form>
+      <div class="waitlist-msg" id="waitlistMsg"></div>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
+    &nbsp;&middot;&nbsp; <a href="/terms">Terms</a>
+    &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security">Security</a>
+    &nbsp;&middot;&nbsp; <a href="/docs">API Docs</a>
+    &nbsp;&middot;&nbsp; <a href="/status">Status</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev">Contact</a>
+  </footer>
+
+  <script>
+    async function fetchPool() {
+      try {
+        var resp = await fetch('/health/pool');
+        var data = await resp.json();
+        if (!data.success) return;
+        var d = data.data;
+        var size = d.pool_size_bits || 0;
+        var target = d.pool_target || 1;
+        var healthy = d.pool_healthy;
+        var source = d.entropy_source || '—';
+        var refills = d.refill_count || 0;
+        var pct = Math.min(100, Math.round((size / target) * 100));
+
+        document.getElementById('poolBar').style.width = pct + '%';
+        document.getElementById('poolSize').textContent = size.toLocaleString();
+        document.getElementById('poolTarget').textContent = target.toLocaleString();
+        document.getElementById('poolSource').textContent = source;
+        document.getElementById('poolRefills').textContent = refills;
+
+        var dot = document.getElementById('poolDot');
+        var txt = document.getElementById('poolStatusText');
+        var heroStatus = document.getElementById('heroPoolStatus');
+
+        if (healthy) {
+          dot.className = 'pool-dot';
+          txt.className = 'pool-status-text';
+          txt.textContent = 'Healthy';
+          heroStatus.textContent = 'LIVE';
+          heroStatus.style.color = '';
+        } else if (pct > 25) {
+          dot.className = 'pool-dot degraded';
+          txt.className = 'pool-status-text degraded';
+          txt.textContent = 'Degraded';
+          heroStatus.textContent = 'DEGRADED';
+          heroStatus.style.color = 'var(--amber)';
+        } else {
+          dot.className = 'pool-dot unhealthy';
+          txt.className = 'pool-status-text unhealthy';
+          txt.textContent = 'Low';
+          heroStatus.textContent = 'LOW';
+          heroStatus.style.color = 'var(--red)';
+        }
+      } catch (e) {
+        document.getElementById('poolStatusText').textContent = 'Offline';
+        document.getElementById('poolDot').className = 'pool-dot unhealthy';
+      }
+    }
+
+    fetchPool();
+    setInterval(fetchPool, 10000);
+
+    async function submitWaitlist(e) {
+      e.preventDefault();
+      var btn = document.getElementById('waitlistBtn');
+      var msg = document.getElementById('waitlistMsg');
+      var email = document.getElementById('waitlistEmail').value.trim();
+      var company = document.getElementById('waitlistCompany').value.trim();
+
+      if (!email) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      msg.textContent = '';
+      msg.className = 'waitlist-msg';
+
+      try {
+        var resp = await fetch('/v1/waitlist', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email: email, company: company, source: 'iot'})
+        });
+        var data = await resp.json();
+        if (data.success) {
+          msg.textContent = "You're on the list! We'll be in touch soon.";
+          msg.className = 'waitlist-msg success';
+          document.getElementById('waitlistEmail').value = '';
+          document.getElementById('waitlistCompany').value = '';
+        } else {
+          msg.textContent = data.error || 'Something went wrong. Try again.';
+          msg.className = 'waitlist-msg error';
+        }
+      } catch (err) {
+        msg.textContent = 'Could not connect. Please try again.';
+        msg.className = 'waitlist-msg error';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Join Waitlist';
+    }
+  </script>
+
+</body>
+</html>

@@ -35,16 +35,22 @@ railway up --service quantumrand
 ```
 quantumrand/
 ├── app/
-│   ├── main.py              # FastAPI endpoints, custom Swagger, landing page
+│   ├── main.py              # FastAPI app, core endpoints, HTML page routes
 │   ├── quantum_engine.py    # QuantumEngine class (Qiskit + Origin backends)
 │   ├── database.py          # Firebase Firestore (api_keys, usage_log)
 │   ├── auth.py              # API key validation, rate limiting, IP allowlist, HMAC signing
 │   ├── cache.py             # Entropy pool (background pre-generation)
 │   ├── config.py            # Environment config (dotenv)
+│   ├── billing.py           # Stripe billing (checkout, portal, webhooks)
+│   ├── finance.py           # Fintech vertical endpoints
 │   ├── pilotos_client.py    # ZMQ DEALER client for Origin Quantum simulator
-│   └── static/
-│       ├── index.html       # Landing page with live demo
-│       └── dashboard.html   # Admin monitoring dashboard
+│   ├── routers/
+│   │   ├── gaming.py        # Gaming & NFT vertical (roll, seed, shuffle, loot, provable)
+│   │   ├── healthcare.py    # Healthcare vertical (record-seal, rx-sign, access-log, consent-seal, device-id)
+│   │   ├── legal.py         # Legal & Insurance vertical (timestamp, evidence-seal, contract-sign, claim-token, notarize)
+│   │   ├── cybersecurity.py # Cybersecurity vertical (keygen, entropy-audit, token, salt, challenge)
+│   │   └── iot.py           # IoT & Embedded vertical (device-id, firmware-sign, session-key, provision, telemetry-seal)
+│   └── static/              # 14 HTML pages, favicon, robots.txt, PDF
 ├── simulator/               # Embedded Origin Quantum simulator (ZMQ)
 │   ├── launcher.py          # Start/stop simulator in daemon thread
 │   ├── zmq_router_server.py # ZMQ ROUTER server
@@ -52,14 +58,27 @@ quantumrand/
 │   ├── result_generator.py  # Quantum circuit simulation
 │   └── config.py            # Simulator config (ports, chip types)
 ├── sdk/
-│   ├── quantumrand/         # Python SDK (pip install quantumrand)
-│   │   └── client.py        # QuantumRandClient with HMAC signing
-│   └── js/                  # JavaScript SDK (npm install quantumrand)
-│       ├── src/index.js     # QuantumRandClient class
-│       └── src/index.d.ts   # TypeScript definitions
+│   ├── getquantumrand/      # Python SDK (pip install getquantumrand)
+│   │   └── client.py        # QuantumRandClient with HMAC signing + all verticals
+│   ├── js/                  # JavaScript SDK (npm install getquantumrand)
+│   │   ├── src/index.js     # QuantumRandClient class + all verticals
+│   │   └── src/index.d.ts   # TypeScript definitions
+│   └── go/                  # Go SDK (github.com/getquantumrand/quantumrand-go)
+│       ├── quantumrand.go   # Client with Finance, Gaming, Legal, Security, IoT services
+│       ├── models.go        # Request/response types
+│       ├── finance.go       # Finance service methods
+│       ├── gaming.go        # Gaming service methods
+│       ├── legal.go         # Legal service methods
+│       ├── security.go      # Security service methods
+│       ├── iot.go           # IoT service methods
+│       ├── health.go        # Health check methods
+│       ├── audit.go         # Audit log methods
+│       ├── entropy.go       # Core entropy generation methods
+│       └── errors.go        # Error types
 ├── tests/
 │   ├── test_phase1.py       # Phase 1: engine + API tests
 │   └── test_phase2.py       # Phase 2: auth, rate limits, Firestore tests
+├── quantumrand-postman-collection.json  # Postman collection (all endpoints)
 ├── requirements.txt
 └── CLAUDE.md
 ```
@@ -74,6 +93,8 @@ quantumrand/
 - `SENTRY_DSN` — Sentry error tracking DSN (optional)
 - `DEMO_RATE_LIMIT` — max demo requests per IP per minute (default: 10)
 - `CIRCUIT_TIMEOUT` — quantum circuit execution timeout in seconds (default: 30)
+- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — Stripe billing
+- `STRIPE_PRICE_INDIE`, `STRIPE_PRICE_STARTUP`, `STRIPE_PRICE_BUSINESS` — Stripe price IDs
 - `ENV`, `PORT`, `API_VERSION`, `ALLOWED_ORIGINS`
 
 ## Quantum Backends
@@ -85,12 +106,12 @@ quantumrand/
 | `ibm_hardware` | IBM Quantum | Real quantum chip | 127 |
 
 ## Rate Limits by Tier
-| Tier     | Calls/Day | Max Bits/Call |
-|----------|-----------|---------------|
-| free     | 100       | 256           |
-| indie    | 1,000     | 1,024         |
-| startup  | 10,000    | 2,048         |
-| business | 100,000   | 4,096         |
+| Tier     | Calls/Day   | Max Bits/Call |
+|----------|-------------|---------------|
+| free     | 1,000       | 256           |
+| indie    | 50,000      | 1,024         |
+| startup  | 500,000     | 2,048         |
+| business | 10,000,000  | 4,096         |
 
 ## Key Design Decisions
 - Max 1024 qubits per circuit; larger requests are chunked
@@ -124,8 +145,11 @@ quantumrand/
 - **Monitoring**: Admin dashboard, usage stats, CSV export
 - **Batch & Webhooks**: Multiple values in one call, async delivery
 - **Caching**: Entropy pool for fast aer_simulator responses
-- **SDKs**: Python and JavaScript with TypeScript definitions
+- **Billing**: Stripe checkout, customer portal, webhook handling, 3-day grace period
+- **Verticals**: Fintech, Gaming, Healthcare, Legal, Cybersecurity, IoT (30 endpoints)
+- **SDKs**: Python, JavaScript (TypeScript), and Go — all with vertical methods
 - **API Versioning**: `/v1/` prefix, request IDs on all responses
+- **Postman Collection**: Full endpoint coverage for all verticals
 
 ## Phase Roadmap
 - **Phase 1** (complete): Core QRNG engine + REST API

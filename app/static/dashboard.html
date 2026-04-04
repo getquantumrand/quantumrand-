@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — QuantumRand</title>
+  <meta name="description" content="Manage your QuantumRand API keys, monitor usage, and view audit logs.">
+  <meta property="og:title" content="Dashboard — QuantumRand">
+  <meta property="og:description" content="Manage your QuantumRand API keys, monitor usage, and view audit logs.">
+  <meta property="og:url" content="https://quantumrand.dev/dashboard">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QuantumRand">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Dashboard — QuantumRand">
+  <meta name="twitter:description" content="Manage your QuantumRand API keys, monitor usage, and view audit logs.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -699,7 +708,9 @@
           <span class="plan-name" id="planName">Free</span>
           <span class="tier-badge" id="planBadge">FREE</span>
           <span class="plan-price" id="planPrice">$0/mo</span>
+          <span id="planRenewal" style="display:none;font-size:0.7rem;color:var(--text-muted);margin-left:0.5rem;"></span>
         </div>
+        <div id="graceWarning" style="display:none;background:rgba(224,108,117,0.15);border:1px solid rgba(224,108,117,0.3);color:#e06c75;font-size:0.75rem;padding:0.5rem 0.75rem;border-radius:6px;margin-bottom:0.5rem;"></div>
         <div class="plan-actions" id="planActions">
           <button class="btn btn-accent" id="upgradeBtn" onclick="showUpgradeOptions()">Upgrade</button>
           <button class="btn btn-ghost" id="manageBtn" onclick="manageBilling()" style="display:none">Manage Billing</button>
@@ -710,17 +721,17 @@
         <div class="plan-option" data-tier="indie" onclick="upgradeTo('indie')">
           <div class="plan-tier">Indie</div>
           <div class="plan-cost">$9<span>/mo</span></div>
-          <div class="plan-detail">1,000 calls/day</div>
+          <div class="plan-detail">50,000 calls/day</div>
         </div>
         <div class="plan-option" data-tier="startup" onclick="upgradeTo('startup')">
           <div class="plan-tier">Startup</div>
           <div class="plan-cost">$49<span>/mo</span></div>
-          <div class="plan-detail">10,000 calls/day</div>
+          <div class="plan-detail">500,000 calls/day</div>
         </div>
         <div class="plan-option" data-tier="business" onclick="upgradeTo('business')">
           <div class="plan-tier">Business</div>
           <div class="plan-cost">$299<span>/mo</span></div>
-          <div class="plan-detail">100,000 calls/day</div>
+          <div class="plan-detail">Unlimited calls/day</div>
         </div>
       </div>
     </div>
@@ -834,6 +845,16 @@ console.<span class="fn">log</span>(bits)</pre>
 
   </main>
 
+  <footer style="text-align:center;padding:3rem 2rem;border-top:1px solid #222222;font-size:0.75rem;color:#888888;">
+    &copy; 2026 Noel Innovations LLC DBA QuantumRand &middot; Built on quantum physics.
+    &nbsp;&middot;&nbsp; <a href="/terms" style="color:#4f8ef7;text-decoration:none;">Terms</a>
+    &nbsp;&middot;&nbsp; <a href="/privacy" style="color:#4f8ef7;text-decoration:none;">Privacy</a>
+    &nbsp;&middot;&nbsp; <a href="/security" style="color:#4f8ef7;text-decoration:none;">Security</a>
+    &nbsp;&middot;&nbsp; <a href="/docs" style="color:#4f8ef7;text-decoration:none;">API Docs</a>
+    &nbsp;&middot;&nbsp; <a href="/status" style="color:#4f8ef7;text-decoration:none;">Status</a>
+    &nbsp;&middot;&nbsp; <a href="mailto:legal@quantumrand.dev" style="color:#4f8ef7;text-decoration:none;">Contact</a>
+  </footer>
+
   <script>
     // ── State ─────────────────────────────────────
     var fullKey = '';
@@ -841,10 +862,10 @@ console.<span class="fn">log</span>(bits)</pre>
     var keyRevealed = false;
 
     var TIER_LIMITS = {
-      free: 100,
-      indie: 1000,
-      startup: 10000,
-      business: 100000
+      free: 1000,
+      indie: 50000,
+      startup: 500000,
+      business: 10000000
     };
 
     // ── Cookie helpers ────────────────────────────
@@ -1011,6 +1032,30 @@ console.<span class="fn">log</span>(bits)</pre>
       document.getElementById('planName').textContent = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
       document.getElementById('planBadge').textContent = currentTier.toUpperCase();
       document.getElementById('planPrice').textContent = PLAN_PRICES[currentTier] || '$0/mo';
+
+      // Renewal date
+      var renewalEl = document.getElementById('planRenewal');
+      if (renewalEl) {
+        if (data.renewal_date) {
+          var d = new Date(data.renewal_date * 1000);
+          renewalEl.textContent = 'Renews ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          renewalEl.style.display = '';
+        } else {
+          renewalEl.style.display = 'none';
+        }
+      }
+
+      // Grace period warning
+      var graceEl = document.getElementById('graceWarning');
+      if (graceEl) {
+        if (data.in_grace_period && data.grace_until) {
+          var gd = new Date(data.grace_until);
+          graceEl.textContent = 'Payment failed — update your card by ' + gd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' or you will be downgraded to Free.';
+          graceEl.style.display = '';
+        } else {
+          graceEl.style.display = 'none';
+        }
+      }
 
       // Show/hide buttons based on tier
       if (currentTier === 'free') {

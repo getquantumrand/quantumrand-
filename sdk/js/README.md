@@ -1,32 +1,32 @@
-# quantumrand
+# getquantumrand
 
-JavaScript/TypeScript SDK for the [QuantumRand API](https://quantumrand.up.railway.app) — true quantum randomness as a service, powered by real quantum hardware and simulators.
+JavaScript/TypeScript SDK for the [QuantumRand API](https://quantumrand.dev) — true quantum randomness as a service, powered by real quantum hardware and simulators.
 
 Zero runtime dependencies. Uses native `fetch` (Node.js 18+).
 
 ## Install
 
 ```bash
-npm install quantumrand
+npm install getquantumrand
 # or
-yarn add quantumrand
+yarn add getquantumrand
 ```
 
 ## Get an API Key
 
 ```bash
-curl -X POST https://quantumrand.up.railway.app/v1/keys/create \
+curl -X POST https://quantumrand.dev/v1/keys/create \
   -H "Content-Type: application/json" \
   -d '{"name": "Your Name", "email": "you@example.com"}'
 ```
 
-Your key will look like `qr_xxxxxxxxxxxxxxxx`. Free tier includes 100 calls/day.
+Your key will look like `qr_xxxxxxxxxxxxxxxx`. Free tier includes 1,000 calls/day.
 
 ## Quick Start
 
 ```javascript
-const { QuantumRandClient } = require("quantumrand");
-// or: import { QuantumRandClient } from "quantumrand";
+const { QuantumRandClient } = require("getquantumrand");
+// or: import { QuantumRandClient } from "getquantumrand";
 
 const qr = new QuantumRandClient({ apiKey: "qr_your_api_key" });
 
@@ -91,7 +91,7 @@ console.log(job.job_id); // poll or wait for the callback
 ```javascript
 const qr = new QuantumRandClient({
   apiKey:     "qr_your_api_key",  // required
-  baseUrl:    "https://quantumrand.up.railway.app", // default
+  baseUrl:    "https://quantumrand.dev", // default
   backend:    "origin_cloud",     // see backends table below
   timeout:    30000,              // ms, default 30000
   hmacSecret: "your_secret",     // optional — enables request signing
@@ -122,7 +122,7 @@ const qr = new QuantumRandClient({
 ### Error Handling
 
 ```javascript
-const { QuantumRandClient, QuantumRandError } = require("quantumrand");
+const { QuantumRandClient, QuantumRandError } = require("getquantumrand");
 
 try {
   const bits = await qr.bits(256);
@@ -140,7 +140,7 @@ try {
 Full TypeScript definitions are included. No `@types/` package needed.
 
 ```typescript
-import { QuantumRandClient, ClientOptions, BatchRequest, BatchResult } from "quantumrand";
+import { QuantumRandClient, ClientOptions, BatchRequest, BatchResult } from "getquantumrand";
 
 const opts: ClientOptions = { apiKey: "qr_your_api_key" };
 const qr = new QuantumRandClient(opts);
@@ -157,10 +157,10 @@ const results: BatchResult[] = await qr.batch(requests);
 
 | Tier | Calls/Day | Max Bits/Call |
 |---|---|---|
-| free | 100 | 256 |
-| indie | 1,000 | 1,024 |
-| startup | 10,000 | 2,048 |
-| business | 100,000 | 4,096 |
+| free | 1,000 | 256 |
+| indie | 50,000 | 1,024 |
+| startup | 500,000 | 2,048 |
+| business | 10,000,000 | 4,096 |
 
 Rate limit headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`) are returned on every response.
 
@@ -170,6 +170,7 @@ Node.js 18 or later (uses native `fetch` and `crypto.randomUUID`).
 
 ## Links
 
-- **API docs**: https://quantumrand.up.railway.app/docs
-- **PyPI package**: https://pypi.org/project/quantumrand
-- **Source**: https://github.com/getquantumrand/quantumrand
+- **API docs**: https://quantumrand.dev/docs
+- **PyPI package**: https://pypi.org/project/getquantumrand
+- **npm package**: https://www.npmjs.com/package/getquantumrand
+- **Source**: https://github.com/getquantumrand/quantumrand-
