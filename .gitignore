@@ -8,5 +8,6 @@ dist/
 build/
 .DS_Store
 log/
+pilotos/
 .claude/
 quantumrand-*.json
