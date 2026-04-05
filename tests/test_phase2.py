@@ -110,10 +110,10 @@ def test_rate_limit_returns_429(client):
     rl_key = result["key"]
     _test_keys.append(rl_key)
 
-    # Insert 100 usage records to simulate exhausted limit
+    # Insert 1000 usage records to exhaust the free-tier daily limit (1,000 calls/day)
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat()
-    for _ in range(100):
+    for _ in range(1000):
         db.log_usage(rl_key, "/generate/bits", 8, 1.0)
 
     resp = client.get("/generate/bits?n=8", headers={"X-API-Key": rl_key})
